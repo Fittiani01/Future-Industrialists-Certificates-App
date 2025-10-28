@@ -1,0 +1,5 @@
+{
+  "name": "شهادات صناعيو المستقبل",
+  "description": "A responsive web application to create, customize, and download professional certificates. Users can change names, schools, backgrounds, and manually position text elements before exporting as PNG or PDF.",
+  "requestFramePermissions": []
+}

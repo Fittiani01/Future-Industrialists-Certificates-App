@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>شهادات صناعيو المستقبل</title>
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "html2canvas": "https://aistudiocdn.com/html2canvas@^1.4.1",
+    "jspdf": "https://aistudiocdn.com/jspdf@^3.0.3",
+    "html-to-image": "https://aistudiocdn.com/html-to-image@^1.11.13",
+    "@vercel/analytics/": "https://aistudiocdn.com/@vercel/analytics@^1.5.0/"
+  }
+}
+</script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @font-face {
+        font-family: 'Cocon Next Arabic';
+        src: url('https://firebasestorage.googleapis.com/v0/b/genai-409315.appspot.com/o/fonts%2FCoconNextArabic-Light.otf?alt=media&token=72863a35-86a0-4a25-b049-75c13e618f0a') format('opentype');
+        font-weight: normal;
+        font-style: normal;
+      }
+      body {
+        font-family: 'Cocon Next Arabic', sans-serif;
+      }
+      #root {
+        position: relative;
+        z-index: 1; /* Ensure the app is above the background canvas */
+      }
+      .gradient-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(270deg, #0f172a, #0b2f4f, #3a0ca3, #00a49a);
+        background-size: 800% 800%;
+        animation: gradientAnimation 20s ease infinite;
+        z-index: -2;
+      }
+       #network-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+      }
+      @keyframes gradientAnimation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+       @media print {
+        body * {
+          visibility: hidden;
+        }
+        .printable-area, .printable-area * {
+          visibility: visible;
+        }
+        .printable-area {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+        }
+        .no-print {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="gradient-bg"></div>
+    <canvas id="network-canvas"></canvas>
+    <div id="root"></div>
+    <script type="module">
+import React, { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
+import ReactDOM from 'react-dom/client';
+import { jsPDF } from 'jspdf';
+import { toPng } from 'html-to-image';
+
+// --- Constants ---
+const TEMPLATE_IDS = [
+  '1RHNRp9JspPoiHzPTENOxDVmwnsEtykbA', // طالب
+  '1V8LaKb4JMP2xQcG5DmylkvSh0-pBTnmP', // طالبة
+  '1XvG1ux-6-i9ssk69i4Dywg5a9mOrSVI3', // مشرف
+  '1Uwe5Ww_Cg6BGAqv2sYvgAJk89YXV9HCN', // مشرفة
+  '1aroOUan94EHZRGU2ZwqWa9enD6IjfTSA', // مدير
+  '1NYHLAxw8zGeA8wU_Fxt6Xt0KZwSI0p4Q', // مديرة
+];
+const LABELS = ['طالب', 'طالبة', 'مشرف', 'مشرفة', 'مدير', 'مديرة'];
+const CERTIFICATE_TEMPLATES = TEMPLATE_IDS.map((id, index) => ({
+  id: LABELS[index],
+  label: LABELS[index],
+  imageUrl: `https://lh3.googleusercontent.com/d/${id}=w1200`
+}));
+const TEXT_COLORS = ['#37346d', '#00a49a', '#606060'];
+
+// --- ConfirmationModal Component ---
+const ConfirmationModal = ({
+  title,
+  message,
+  confirmText = 'تأكيد',
+  cancelText = 'إلغاء',
+  onConfirm,
+  onClose,
+}) => {
+    const confirmButtonRef = useRef(null);
+    
+    useEffect(() => {
+        confirmButtonRef.current?.focus();
+        
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [onClose]);
+
+    const handleConfirmClick = () => {
+        onConfirm();
+        onClose();
+    };
+
+    return (
+        React.createElement('div', {
+            className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 font-['Cocon_Next_Arabic']",
+            onClick: onClose,
+            role: "dialog",
+            "aria-modal": "true",
+            "aria-labelledby": "confirmation-title"
+        },
+            React.createElement('div', {
+                className: "bg-slate-800/80 p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md",
+                onClick: (e) => e.stopPropagation(),
+                role: "document"
+            },
+                React.createElement('h2', { id: "confirmation-title", className: "text-2xl font-bold text-red-400 mb-4 text-center" }, title),
+                React.createElement('p', { className: "text-slate-300 mb-8 text-center" }, message),
+                React.createElement('div', { className: "flex justify-center gap-4" },
+                    React.createElement('button', {
+                        onClick: onClose,
+                        className: "bg-slate-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-slate-500 transition-all duration-200"
+                    }, cancelText),
+                    React.createElement('button', {
+                        ref: confirmButtonRef,
+                        onClick: handleConfirmClick,
+                        className: "bg-red-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-slate-800"
+                    }, confirmText)
+                )
+            )
+        )
+    );
+};
+
+// --- PasswordModal Component ---
+const PasswordModal = ({ onSubmit, onClose }) => {
+  const [password, setPassword] = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(password);
+  };
+
+  return (
+    React.createElement('div', {
+        className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 font-['Cocon_Next_Arabic']",
+        onClick: onClose
+    },
+        React.createElement('div', {
+            className: "bg-slate-800/80 p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-sm",
+            onClick: (e) => e.stopPropagation()
+        },
+            React.createElement('h2', { className: "text-2xl font-bold text-teal-400 mb-4 text-center" }, "دخول المسؤول"),
+            React.createElement('form', { onSubmit: handleSubmit },
+                React.createElement('input', {
+                    ref: inputRef,
+                    type: "password",
+                    value: password,
+                    onChange: (e) => setPassword(e.target.value),
+                    className: "w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white text-center placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-400",
+                    placeholder: "••••••••"
+                }),
+                React.createElement('button', {
+                    type: "submit",
+                    className: "w-full mt-6 bg-teal-500 text-slate-900 font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-teal-400 transition-all duration-200"
+                }, "دخــــول")
+            )
+        )
+    )
+  );
+};
+
+// --- AdminDashboard Component ---
+const AdminDashboard = ({ history, onResetCounter }) => {
+  if (history.length === 0) {
+    return (
+      React.createElement('div', { className: "w-full max-w-4xl mx-auto p-4 space-y-6 text-center" },
+        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-10 rounded-2xl border border-slate-700" },
+          React.createElement('h3', { className: "text-2xl font-bold text-slate-300" }, "لا توجد بيانات تحميل بعد"),
+          React.createElement('p', { className: "text-slate-400 mt-2" }, "ابدأ بتحميل الشهادات لترى الإحصائيات هنا.")
+        ),
+        React.createElement('div', { className: "bg-red-900/20 backdrop-blur-sm p-6 rounded-2xl border border-red-500/30 mt-8 no-print" },
+            React.createElement('h3', { className: "text-xl font-bold text-red-400 mb-2" }, "منطقة الخطر"),
+            React.createElement('p', { className: "text-red-300/80 text-sm mb-4" }, "لا تستخدم هذا الزر إلا في بداية استخدام النظام لأول مرة. سيؤدي هذا الإجراء إلى إعادة تعيين عداد أسماء الملفات إلى الصفر."),
+            React.createElement('button', {
+                onClick: onResetCounter,
+                className: "bg-red-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-500 transition-all duration-200"
+            }, "إعادة تعيين عداد التحميل")
+        )
+      )
+    );
+  }
+
+  const totalDownloads = history.length;
+  const pngDownloads = history.filter(item => item.format === 'png').length;
+  const downloadsByTypeMap = history.reduce((acc, curr) => {
+      acc.set(curr.type, (acc.get(curr.type) || 0) + 1);
+      return acc;
+  }, new Map());
+  const downloadsByType = Array.from(downloadsByTypeMap.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  const maxCount = Math.max(...downloadsByType.map(d => d.count), 0);
+  const recentActivity = history.slice(0, 5);
+
+  const formatTimestamp = (isoString) => {
+    const date = new Date(isoString);
+    return date.toLocaleString('ar-SA', {
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: true,
+    });
+  };
+
+  return (
+    React.createElement('div', { className: "w-full max-w-4xl mx-auto p-4 space-y-6 printable-area" },
+      React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6 no-print" },
+        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center" },
+          React.createElement('h3', { className: "text-slate-400 text-lg" }, "إجمالي التحميلات"),
+          React.createElement('p', { className: "text-4xl font-bold text-white" }, totalDownloads)
+        ),
+        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center" },
+            React.createElement('h3', { className: "text-slate-400 text-lg mb-3" }, "PNG vs PDF"),
+            React.createElement('div', { className: "w-24 h-24 rounded-full flex items-center justify-center", style: { background: `conic-gradient(#00a49a 0% ${pngDownloads / totalDownloads * 100}%, #8b5cf6 ${pngDownloads / totalDownloads * 100}% 100%)`} },
+                React.createElement('div', { className: "w-20 h-20 rounded-full bg-slate-800 flex flex-col items-center justify-center" },
+                     React.createElement('span', { className: "text-xs text-slate-300" }, totalDownloads),
+                     React.createElement('span', { className: "text-xs text-slate-400" }, "تحميل")
+                )
+            )
+        )
+      ),
+      React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
+        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700" },
+          React.createElement('h3', { className: "text-xl font-bold text-white mb-4" }, "التحميلات حسب نوع الشهادة"),
+          React.createElement('div', { className: "space-y-3" }, downloadsByType.map((item) => (
+              React.createElement('div', { key: item.name, className: "flex items-center gap-4 text-sm" },
+                React.createElement('span', { className: "w-20 text-slate-300" }, item.name),
+                React.createElement('div', { className: "flex-1 bg-slate-700 rounded-full h-6" },
+                  React.createElement('div', {
+                    className: "bg-teal-500 h-6 rounded-full flex items-center justify-center",
+                    style: { width: `${(item.count / maxCount) * 100}%` }
+                  }, React.createElement('span', { className: "text-white font-semibold text-xs" }, item.count))
+                )
+              )
+          )))
+        ),
+        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700" },
+          React.createElement('h3', { className: "text-xl font-bold text-white mb-4" }, "آخر النشاطات"),
+          React.createElement('div', { className: "space-y-2" }, recentActivity.map((activity, index) => (
+                React.createElement('div', { key: index, className: "flex justify-between items-center text-sm p-2 border-b border-slate-700 last:border-b-0" },
+                    React.createElement('span', { className: "text-slate-200" }, "نوع الشهادة: ", React.createElement('span', { className: "font-semibold text-teal-400" }, activity.type)),
+                    React.createElement('span', { className: "text-slate-400" }, formatTimestamp(activity.timestamp))
+                )
+          )))
+        )
+      ),
+      React.createElement('div', { className: "text-center no-print" },
+        React.createElement('button', { onClick: () => window.print(), className: "bg-slate-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-slate-500 transition-all duration-200" }, "طباعة التقرير")
+      ),
+      React.createElement('div', { className: "bg-red-900/20 backdrop-blur-sm p-6 rounded-2xl border border-red-500/30 mt-8 no-print" },
+          React.createElement('h3', { className: "text-xl font-bold text-red-400 mb-2" }, "منطقة الخطر"),
+          React.createElement('p', { className: "text-red-300/80 text-sm mb-4" }, "لا تستخدم هذا الزر إلا في بداية استخدام النظام لأول مرة. سيؤدي هذا الإجراء إلى إعادة تعيين عداد أسماء الملفات إلى الصفر."),
+          React.createElement('button', {
+            onClick: onResetCounter,
+            className: "bg-red-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-500 transition-all duration-200"
+          }, "إعادة تعيين عداد التحميل")
+      )
+    )
+  );
+};
+
+// --- CertificatePreview Component ---
+const CertificatePreview = ({
+  templateUrl,
+  elements,
+  previewRef
+}) => {
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useLayoutEffect(() => {
+    const updateWidth = () => {
+      if (previewRef.current) {
+        setContainerWidth(previewRef.current.offsetWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, [previewRef]);
+
+  return (
+    React.createElement('div', { className: "w-full max-w-4xl mx-auto flex flex-col items-center" },
+      React.createElement('div', {
+          ref: previewRef,
+          className: "w-full aspect-[1.414/1] bg-white rounded-2xl shadow-2xl relative overflow-hidden"
+      },
+          React.createElement('div', { className: "absolute inset-0" },
+            React.createElement('img', { src: templateUrl, className: "w-full h-full object-cover", alt: "Certificate Background" }),
+            Object.keys(elements).map((key) => {
+              const element = elements[key];
+              const MAX_FONT_SIZE = element.fontSize;
+              const MIN_FONT_SIZE = 14;
+              const MAX_WIDTH = 896;
+              const MIN_WIDTH = 375;
+              const clampedWidth = Math.max(MIN_WIDTH, Math.min(containerWidth, MAX_WIDTH));
+              const factor = (clampedWidth - MIN_WIDTH) / (MAX_WIDTH - MIN_WIDTH);
+              const scaledFontSize = MIN_FONT_SIZE + (MAX_FONT_SIZE - MIN_FONT_SIZE) * factor;
+
+              return (
+                React.createElement('div', {
+                  key: key,
+                  style: {
+                    position: 'absolute',
+                    left: `${element.position.x}%`,
+                    top: `${element.position.y}%`,
+                    transform: 'translate(-100%, -50%)',
+                    fontSize: `${scaledFontSize}px`,
+                    color: element.color,
+                    userSelect: 'none',
+                    whiteSpace: 'nowrap',
+                    direction: 'rtl',
+                  }
+                }, element.text)
+              );
+            })
+          )
+      )
+    )
+  );
+};
+
+// --- Controls Component ---
+const Controls = ({
+  elements,
+  selectedTemplateId,
+  onTemplateChange,
+  onElementChange,
+  onGlobalColorChange,
+  onDownloadPNG,
+  onDownloadPDF,
+  isLoading,
+}) => {
+  const nameElement = elements['name'];
+  const schoolElement = elements['school'];
+  const activeColor = nameElement?.color || TEXT_COLORS[0];
+
+  return (
+    React.createElement('div', { className: "w-full max-w-4xl mx-auto space-y-3" },
+      React.createElement('div', { className: "grid grid-cols-3 sm:grid-cols-6 gap-2" },
+        CERTIFICATE_TEMPLATES.map((template) => (
+          React.createElement('button', {
+            key: template.id,
+            onClick: () => onTemplateChange(template.id),
+            className: `px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
+              selectedTemplateId === template.id
+                ? 'bg-teal-400 text-slate-900 shadow-lg scale-105'
+                : 'bg-slate-700 text-white hover:bg-slate-600'
+            }`
+          }, template.label)
+        ))
+      ),
+      React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-2" },
+        nameElement && (
+            React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-700" },
+                React.createElement('input', {
+                    type: "text",
+                    placeholder: 'الاسم',
+                    value: nameElement.text,
+                    onChange: (e) => onElementChange(nameElement.id, { text: e.target.value }),
+                    className: "w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 text-right"
+                })
+            )
+        ),
+        schoolElement && (
+            React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-700" },
+                React.createElement('input', {
+                    type: "text",
+                    placeholder: 'المدرسة',
+                    value: schoolElement.text,
+                    onChange: (e) => onElementChange(schoolElement.id, { text: e.target.value }),
+                    className: "w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 text-right"
+                })
+            )
+        ),
+        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-700 flex justify-center items-center gap-3 h-full" },
+            React.createElement('span', { className: "font-semibold text-slate-300 hidden sm:inline" }, "اللون:"),
+            React.createElement('div', { className: "flex items-center gap-3" }, TEXT_COLORS.map((color) => (
+                    React.createElement('button', {
+                        key: color,
+                        onClick: () => onGlobalColorChange(color),
+                        className: `w-7 h-7 rounded-full transition-transform duration-200 transform hover:scale-110 ${
+                            activeColor === color ? 'ring-2 ring-offset-2 ring-offset-slate-800 ring-teal-400' : ''
+                        }`,
+                        style: { backgroundColor: color },
+                        "aria-label": `Select color ${color}`
+                    })
+            )))
+        )
+      ),
+      React.createElement('div', { className: "grid grid-cols-2 gap-2" },
+        React.createElement('button', {
+          onClick: onDownloadPNG,
+          disabled: isLoading,
+          className: "w-full bg-teal-500 text-slate-900 font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-teal-400 transition-all duration-200 disabled:opacity-50"
+        }, isLoading ? 'جاري التحميل...' : 'تحميل PNG'),
+        React.createElement('button', {
+          onClick: onDownloadPDF,
+          disabled: isLoading,
+          className: "w-full bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-purple-500 transition-all duration-200 disabled:opacity-50"
+        }, isLoading ? 'جاري التحميل...' : 'تحميل PDF')
+      )
+    )
+  );
+};
+
+// --- App Component ---
+const App = () => {
+  const [selectedTemplateId, setSelectedTemplateId] = useState(CERTIFICATE_TEMPLATES[0].id);
+  
+  const getInitialElements = useCallback(() => ({
+    name: {
+      id: 'name', text: 'الاســـم', position: { x: 67, y: 37.5 },
+      fontSize: 17, color: TEXT_COLORS[1],
+    },
+    school: {
+      id: 'school', text: 'المدرســـة', position: { x: 67, y: 43 },
+      fontSize: 17, color: TEXT_COLORS[1],
+    },
+  }), []);
+
+  const [elements, setElements] = useState(getInitialElements());
+  const [isLoading, setIsLoading] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  
+  const [downloadHistory, setDownloadHistory] = useState(() => {
+    const savedHistory = localStorage.getItem('downloadHistory');
+    try { return savedHistory ? JSON.parse(savedHistory) : []; } catch (e) { return []; }
+  });
+
+  const previewRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = document.getElementById('network-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    let particles;
+    let animationFrameId;
+
+    const resizeCanvas = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    class Particle {
+        constructor(x, y, color) { this.x = x; this.y = y; this.speedX = Math.random() * 0.5 - 0.25; this.speedY = Math.random() * 0.5 - 0.25; this.size = Math.random() * 1.5 + 1; this.color = color; }
+        update() { if (this.x > canvas.width || this.x < 0) this.speedX *= -1; if (this.y > canvas.height || this.y < 0) this.speedY *= -1; this.x += this.speedX; this.y += this.speedY; }
+        draw() { ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
+    }
+    const init = () => { resizeCanvas(); particles = []; const num = 50; for (let i = 0; i < num; i++) { particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height, 'rgba(0, 164, 154, 0.5)')); } };
+    const connect = () => {
+        let opacityValue = 1; for (let a = 0; a < particles.length; a++) { for (let b = a; b < particles.length; b++) { const distance = Math.sqrt((particles[a].x - particles[b].x) ** 2 + (particles[a].y - particles[b].y) ** 2); const connectRadius = 180; if (distance < connectRadius) { opacityValue = 1 - (distance / connectRadius); ctx.strokeStyle = `rgba(0, 164, 154, ${opacityValue})`; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(particles[a].x, particles[a].y); ctx.lineTo(particles[b].x, particles[b].y); ctx.stroke(); } } }
+    };
+    const animate = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); particles.forEach(p => { p.update(); p.draw(); }); connect(); animationFrameId = requestAnimationFrame(animate); };
+    init(); animate();
+    window.addEventListener('resize', init);
+    return () => { window.removeEventListener('resize', init); cancelAnimationFrame(animationFrameId); };
+  }, []);
+
+  const selectedTemplate = CERTIFICATE_TEMPLATES.find(t => t.id === selectedTemplateId) || CERTIFICATE_TEMPLATES[0];
+  const handleTemplateChange = (templateId) => { setSelectedTemplateId(templateId); setElements(getInitialElements()); };
+  const handleElementChange = (id, updates) => setElements(prev => ({ ...prev, [id]: { ...prev[id], ...updates } }));
+  const handleGlobalColorChange = (color) => setElements(prev => { const newElements = {...prev}; for(const key in newElements) { newElements[key].color = color; } return newElements; });
+  
+  const handleDownload = async (format) => {
+    if (!previewRef.current) return;
+    setIsLoading(true);
+    try {
+        const dataUrl = await toPng(previewRef.current, { quality: 1, pixelRatio: 3, backgroundColor: 'white' });
+        let count = parseInt(localStorage.getItem('downloadCount') || '0', 10);
+        count++;
+        localStorage.setItem('downloadCount', String(count));
+        const studentName = elements['name']?.text.trim() || 'شهادة';
+        const filename = `شهادة صناعيو المستقبل_${studentName}`;
+        const newRecord = { type: selectedTemplateId, format, timestamp: new Date().toISOString() };
+        const updatedHistory = [newRecord, ...downloadHistory];
+        setDownloadHistory(updatedHistory);
+        localStorage.setItem('downloadHistory', JSON.stringify(updatedHistory));
+        if (format === 'png') {
+            const link = document.createElement('a');
+            link.download = `${filename}.png`;
+            link.href = dataUrl;
+            link.click();
+        } else {
+            const img = new Image();
+            img.src = dataUrl;
+            img.onload = () => {
+                const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [img.width, img.height] });
+                pdf.addImage(dataUrl, 'PNG', 0, 0, img.width, img.height);
+                pdf.save(`${filename}.pdf`);
+            }
+        }
+    } catch (error) { console.error('Download error:', error); } finally { setIsLoading(false); }
+  };
+
+  const handleAdminClick = () => { if (isAdminAuthenticated) { setShowAdmin(!showAdmin); } else { setShowPasswordModal(true); } };
+  const handlePasswordSubmit = (password) => { if (password === 'AdminFuture') { setIsAdminAuthenticated(true); setShowPasswordModal(false); setShowAdmin(true); } else { alert('كلمة المرور غير صحيحة'); } };
+  const handleResetCounter = () => setShowResetConfirm(true);
+  const executeReset = () => { localStorage.setItem('downloadCount', '0'); localStorage.removeItem('downloadHistory'); setDownloadHistory([]); alert('تم إعادة تعيين عداد وسجل التحميلات بنجاح.'); };
+
+  return (
+    React.createElement(React.Fragment, null,
+      React.createElement('div', { className: `min-h-screen text-white flex flex-col items-center p-4 font-['Cocon_Next_Arabic'] w-full overflow-x-hidden ${showAdmin ? 'overflow-y-auto' : 'overflow-y-hidden'}` },
+        React.createElement('header', { className: "w-full max-w-4xl mx-auto flex justify-between items-center p-4 z-10 relative" },
+            React.createElement('h1', { className: "text-2xl sm:text-4xl font-bold text-white tracking-widest" }, "صنـــاعيــــو المستقبـــــل"),
+            React.createElement('button', { onClick: handleAdminClick, className: "text-white hover:text-teal-400 transition-colors p-2" },
+                 showAdmin ? React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" }))
+                 : React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" }), React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M15 12a3 3 0 11-6 0 3 3 0 016 0z" }))
+            )
+        ),
+        React.createElement('main', { className: "w-full flex-grow flex flex-col items-center justify-start gap-2" },
+           showAdmin ? React.createElement(AdminDashboard, { history: downloadHistory, onResetCounter: handleResetCounter })
+           : React.createElement(React.Fragment, null,
+               React.createElement(Controls, {
+                 elements, selectedTemplateId,
+                 onTemplateChange: handleTemplateChange,
+                 onElementChange: handleElementChange,
+                 onGlobalColorChange: handleGlobalColorChange,
+                 onDownloadPNG: () => handleDownload('png'),
+                 onDownloadPDF: () => handleDownload('pdf'),
+                 isLoading
+               }),
+               React.createElement(CertificatePreview, {
+                 previewRef,
+                 templateUrl: selectedTemplate.imageUrl,
+                 elements
+               })
+           )
+        )
+      ),
+      showPasswordModal && React.createElement(PasswordModal, { onSubmit: handlePasswordSubmit, onClose: () => setShowPasswordModal(false) }),
+      showResetConfirm && React.createElement(ConfirmationModal, {
+            title: "تأكيد إعادة التعيين",
+            message: "هل أنت متأكد أنك تريد إعادة تعيين عداد وسجل التحميلات إلى 0؟ لا يمكن التراجع عن هذا الإجراء.",
+            confirmText: "نعم، أعد التعيين",
+            onConfirm: executeReset,
+            onClose: () => setShowResetConfirm(false)
+      })
+    )
+  );
+};
+
+// --- Mount App ---
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error("Could not find root element to mount to");
+}
+const root = ReactDOM.createRoot(rootElement);
+root.render(React.createElement(React.StrictMode, null, React.createElement(App)));
+
+    </script>
+  </body>
+</html>
