@@ -6,7 +6,7 @@
     <title>شهادات صناعيو المستقبل</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200..1000&family=Lalezar&family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200..1000&family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
     <script type="importmap">
 {
   "imports": {
@@ -148,7 +148,7 @@ import { toPng } from 'html-to-image';
 
 // --- Firebase Setup ---
 const firebaseConfig = {
-  apiKey: "AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-IY",
+  apiKey: "AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-REPLACED",
   authDomain: "future-industrialists.firebaseapp.com",
   databaseURL: "https://future-industrialists-default-rtdb.firebaseio.com",
   projectId: "future-industrialists",
@@ -186,7 +186,6 @@ const FONTS = [
   { name: 'كايرو', familyName: 'Cairo', familyCSS: "'Cairo', sans-serif", url: 'https://fonts.gstatic.com/s/cairo/v28/SLXgc-MA-13aa-scHrU.woff2', format: 'woff2' },
   { name: 'أميري', familyName: 'Amiri', familyCSS: "'Amiri', serif", url: 'https://fonts.gstatic.com/s/amiri/v26/J7acnpd8CGxBHpU.woff2', format: 'woff2' },
   { name: 'تجوال', familyName: 'Tajawal', familyCSS: "'Tajawal', sans-serif", url: 'https://fonts.gstatic.com/s/tajawal/v11/Iura6YBj_oCad4k.woff2', format: 'woff2' },
-  { name: 'لالزار', familyName: 'Lalezar', familyCSS: "'Lalezar', cursive", url: 'https://fonts.gstatic.com/s/lalezar/v16/zrfl0HL0Cz2Vd-g.woff2', format: 'woff2' },
 ];
 
 const JEDDAH_SCHOOLS = [
@@ -259,7 +258,7 @@ const AlertModal = ({ message, onClose }) => {
 
     return (
         React.createElement('div', {
-            className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 font-['Cocon_Next_Arabic'] no-print",
+            className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 no-print",
             onClick: onClose,
             role: "alertdialog",
             "aria-modal": "true",
@@ -320,7 +319,7 @@ const ConfirmationModal = ({
 
     return (
         React.createElement('div', {
-            className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 font-['Cocon_Next_Arabic'] no-print",
+            className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 no-print",
             onClick: onClose,
             role: "dialog",
             "aria-modal": "true",
@@ -374,7 +373,7 @@ const PasswordModal = ({ onSubmit, onClose }) => {
 
   return (
     React.createElement('div', {
-        className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 font-['Cocon_Next_Arabic'] no-print",
+        className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 no-print",
         onClick: onClose
     },
         React.createElement('div', {
@@ -646,8 +645,8 @@ const CertificatePreview = ({
             }),
             Object.keys(elements).map((key) => {
               const element = elements[key];
-              const MAX_FONT_SIZE = 18;
-              const MIN_FONT_SIZE = 12.5;
+              const MAX_FONT_SIZE = 17;
+              const MIN_FONT_SIZE = 11.2;
               const MAX_WIDTH = 896;
               const MIN_WIDTH = 375;
               const clampedWidth = Math.max(MIN_WIDTH, Math.min(containerWidth, MAX_WIDTH));
@@ -656,6 +655,9 @@ const CertificatePreview = ({
               
               const placeholderText = key === 'name' ? 'الاســـم' : 'المدرســـة';
               const textToRender = element.text || placeholderText;
+              
+              const fontInfo = FONTS.find(f => f.familyCSS === element.fontFamily);
+              const fontFamilyForStyle = fontInfo ? fontInfo.familyName : 'sans-serif';
 
               return (
                 React.createElement('div', {
@@ -670,7 +672,7 @@ const CertificatePreview = ({
                     userSelect: 'none',
                     whiteSpace: 'nowrap',
                     direction: 'rtl',
-                    fontFamily: element.fontFamily,
+                    fontFamily: fontFamilyForStyle,
                   }
                 }, textToRender)
               );
@@ -1207,9 +1209,9 @@ const App = () => {
 
   return (
     React.createElement(React.Fragment, null,
-      React.createElement('div', { className: `min-h-screen text-white flex flex-col items-center p-4 font-['Cocon_Next_Arabic'] w-full` },
+      React.createElement('div', { className: `min-h-screen text-white flex flex-col items-center p-4 w-full` },
         React.createElement('header', { className: "w-full max-w-4xl mx-auto flex justify-between items-center p-4 z-10 relative no-print" },
-            React.createElement('h1', { className: "text-2xl sm:text-4xl font-bold text-white tracking-widest" }, "صنـــاعيــــو المستقبـــــل"),
+            React.createElement('h1', { className: "text-2xl sm:text-4xl font-bold text-white tracking-widest", style: { fontFamily: "'Cocon Next Arabic', sans-serif" } }, "صنـــاعيــــو المستقبـــــل"),
             React.createElement('button', { onClick: handleAdminClick, className: "text-white hover:text-teal-400 transition-colors p-2" },
                  showAdmin ? React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" }))
                  : React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, 
@@ -1218,7 +1220,7 @@ const App = () => {
                  )
             )
         ),
-        React.createElement('main', { className: "w-full flex-grow flex flex-col items-center justify-center pt-8" },
+        React.createElement('main', { className: "w-full flex-grow flex flex-col items-center justify-start" },
             showAdmin ? (
                 firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-IY") ?
                 React.createElement(AdminDashboard, { 
@@ -1230,13 +1232,6 @@ const App = () => {
                     reportRef: reportRef
                 }) : React.createElement(UnconfiguredAdminView)
             ) : React.createElement(React.Fragment, null,
-                React.createElement(CertificatePreview, {
-                  templateUrl: selectedTemplate.imageUrl,
-                  elements: elements,
-                  previewRef: previewRef,
-                  onImageLoad: () => setIsImageLoading(false)
-                }),
-                React.createElement('div', { className: 'h-4' }),
                 React.createElement(Controls, {
                   elements: elements,
                   selectedTemplateId: selectedTemplateId,
@@ -1248,6 +1243,13 @@ const App = () => {
                   onDownloadPDF: () => handleDownload('pdf'),
                   isLoading: isLoading,
                   isImageLoading: isImageLoading,
+                }),
+                React.createElement('div', { className: 'h-8' }),
+                React.createElement(CertificatePreview, {
+                  templateUrl: selectedTemplate.imageUrl,
+                  elements: elements,
+                  previewRef: previewRef,
+                  onImageLoad: () => setIsImageLoading(false)
                 })
             )
         )
