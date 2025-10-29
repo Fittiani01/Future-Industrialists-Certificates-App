@@ -7,13 +7,10 @@
     <script type="importmap">
 {
   "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "html2canvas": "https://aistudiocdn.com/html2canvas@^1.4.1",
-    "jspdf": "https://aistudiocdn.com/jspdf@^3.0.3",
-    "html-to-image": "https://aistudiocdn.com/html-to-image@^1.11.13",
-    "@vercel/analytics/": "https://aistudiocdn.com/@vercel/analytics@^1.5.0/"
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "jspdf": "https://esm.sh/jspdf@2.5.1",
+    "html-to-image": "https://esm.sh/html-to-image@1.11.11"
   }
 }
 </script>
@@ -27,6 +24,7 @@
       }
       body {
         font-family: 'Cocon Next Arabic', sans-serif;
+        background-color: #0f172a; /* Fallback for browsers without animation support */
       }
       #root {
         position: relative;
@@ -56,21 +54,76 @@
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
       }
-       @media print {
+      
+      /* --- Professional Print Styles --- */
+      .print-header { display: none; }
+      .donut-chart-print-summary { display: none; }
+
+      @media print {
         body * {
-          visibility: hidden;
+          visibility: hidden !important;
         }
         .printable-area, .printable-area * {
-          visibility: visible;
+          visibility: visible !important;
         }
         .printable-area {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
+          position: absolute !important;
+          left: 20px !important;
+          top: 20px !important;
+          right: 20px !important;
+          width: auto !important;
+          background: #fff !important;
+          color: black !important;
+        }
+        .printable-area * {
+          color: black !important;
+          background-color: transparent !important;
+          box-shadow: none !important;
+          border-color: #ccc !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .print-header {
+          display: block !important;
+          text-align: center;
+          margin-bottom: 2rem;
+          border-bottom: 2px solid black;
+          padding-bottom: 1rem;
+        }
+        .print-header h1 {
+          font-size: 22pt;
+          font-weight: bold;
+        }
+        .print-header p {
+          font-size: 10pt;
+          margin-top: 0.5rem;
         }
         .no-print {
-          display: none;
+          display: none !important;
+        }
+        .print-card {
+          border: 1px solid #ccc;
+          padding: 1rem;
+          border-radius: 0 !important;
+          margin-bottom: 1rem;
+          page-break-inside: avoid;
+        }
+        .print-bar {
+          background-color: #e0e0e0 !important;
+        }
+        .print-bar-text {
+          color: black !important;
+        }
+        .donut-chart-visual {
+          display: none !important;
+        }
+        .donut-chart-print-summary {
+          display: block !important;
+        }
+         .print-table-row {
+           border-bottom: 1px solid #ccc;
+           padding: 0.5rem 0;
+           page-break-inside: avoid;
         }
       }
     </style>
@@ -101,6 +154,98 @@ const CERTIFICATE_TEMPLATES = TEMPLATE_IDS.map((id, index) => ({
   imageUrl: `https://lh3.googleusercontent.com/d/${id}=w1200`
 }));
 const TEXT_COLORS = ['#37346d', '#00a49a', '#606060'];
+const JEDDAH_SCHOOLS = [
+  "الثانوية الخامسة عشر بعد المئة", "الثانوية العشرون", "الثانوية الثانية والسبعون",
+  "ثانوية مدارس الحمراء العالمية", "الثانوية التاسعة عشر", "ثانوية عمورية",
+  "ثانوية قريش", "ثانوية دار الفرسان", "الثانوية السادسة بعد المئة",
+  "ثانوية العقيق النموذجية", "الثانوية السابعة والستون", "ثانوية الكون المطورة",
+  "الثانوية الثامنة عشر بعد المئة", "الثانوية الثالثة والسبعون", "ثانوية الثغر",
+  "المكتشف العالمية", "ثانوية الفال المميز", "ثانوية الاخاء",
+  "ثانوية بوابة المعرفة", "ثانوية جيل الجزيرة", "اكاديمية وعد",
+  "ثانوية الشبل", "ثانوية الإخلاص", "ثانوية السروات الاهلية",
+  "الثانوية الثامنة والسبعون", "ثانوية الامجاد الأولية", "ثانوية الفيصلية للموهوبين",
+  "ثانوية الخليج الاهلية", "ثانوية الموهوبات", "الثانوية السابعة بعد المئة",
+  "الثانوية الرابعة بعد المئة", "الاندلس العالمية فرع الشاطيء", "الخامسة بعد المئة",
+  "ثانوية منارات جدة", "مجمع ابحر الثانوي", "ثانوية الخمرة الأولى",
+  "الكون المطورة", "الكون العالمية", "الثانوية الثالثة",
+  "ثانوية المنال الاهلية", "ثانوية مستورة", "ثانوية المكتشف فرع المحمدية",
+  "ثانوية النبلاء العالمية", "الثانوية الثالثة والاربعون", "الثانوية الرابعة",
+  "ثانوية فلسطين", "ثانوية المكتشف فرع الشاطئ", "مدارس الفيصلية",
+  "مدارس الكون العالمية", "ثانوية دار جنى العالمية", "ثانوية جزيرة العلوم",
+  "الاندلس الاهلية للموهوبيين", "مكي بن ابي طالب", "ثانوية بلاط الشهداء",
+  "ثانوية الملك سعود", "الثانوية الإبراهيمية", "ثانوية عبد الرحمن بن داخل",
+  "ثانوية ابن حزم", "الثانوية الرحمانية", "ثانوية علي بن ابي طالب",
+  "ثانوية ابن حبان", "الثانوية الخامسة والثلاثون", "الثانوية الثامنة عشر",
+  "ثانوية ذات الرقاع", "ثانوية القدس", "الثانوية الثانية",
+  "الثامنة والتسعون", "الثانوية التاسعة عشر بعد المئة", "الثانوية الثامنة والثلاثون",
+  "الثانوية الثامنة والستون", "الثانوية التاسعة والعشرون", "الثانوية الخامسة",
+  "الثانوية السابعة والخمسون", "الثانوية السادسة والخمسون", "الثانوية الخامسة والأربعون",
+  "الثانوية الحادية عشر", "ثانوية جدة", "ثانوية مؤتة",
+  "الثانوية السابعة والعشرون", "الثانوية الخمسون", "الثانوية التاسعة والثلاثون",
+  "الثانوية الثالثة والأربعون", "الثانوية الأولى", "ثانوية صفية بنت عبدالمطلب",
+  "الثانوية الواحد والعشرون", "ثانوية الشراع", "ثانوية الفزاري",
+  "ثانوية ابي جندل", "ثانوية الأمير مشعل بن ماجد", "ثانوية الزهراوي",
+  "ثانوية الفيصل", "ثانوية الشاطئ", "ثانوية المروة",
+  "رضوى الثانوية", "الأندلس العالمية", "مجمع الأمير محمد بن سعود",
+  "الخمرة الأولى", "الثانوية الرابعة والتسعون", "ثانوية انس بن مالك",
+  "ثانوية مدائن الفهد", "الثانوية الثانية والثلاثون", "الثانوية التاسعة والثمانون",
+  "الثانوية الثالثة والخمسون", "الثانوية السبعون", "الثانوية الواحد والثلاثون",
+  "الثانوية الثامنة والخمسون", "الثانوية السابعة والتسعون", "الثانوية السابعة والستون",
+  "ثانوية عمر بن الخطاب", "مجمع ابحر التعليمي", "خليص الثانوية",
+  "ثانوية طليطلة", "الياقوت الأولى", "الثانوية الواحد وستون",
+  "الثانوية الرابعة والاربعون", "الثانوية الحادية عشرة بعد المئة", "الثغر الخالدية",
+  "ثانوية الوفاء الأولى", "الثانوية الثامنة بعد المئة", "الثانوية الثامنة",
+  "رواد الخليج العالمية", "قرطبة الاهلية", "الاندلس الاهلية فرع الحمدانية",
+  "ثانوية النصر", "ثانوية الأقصى الاهلية", "ثانوية دار التربية الحديثة",
+  "ثانوية واحة جدة", "الفيصلية الاهلية فرع الرحاب", "أكاديمية جدة العالمية",
+  "انجال الصفوة", "الفيصلية الاهلية فرع الفلاح", "العزيزية الاهلية",
+  "دار الفكر", "دار التربية", "الفلاح الثانوية", "الامجاد الاهلية",
+  "نور الايمان", "الروابي الخضراء", "الوادي العالمية", "بيتي الصغير",
+  "روضة السليمانية", "التقوى الشاملة", "الشعلة"
+];
+
+
+// --- AlertModal Component ---
+const AlertModal = ({ message, onClose }) => {
+    const closeButtonRef = useRef(null);
+
+    useEffect(() => {
+        closeButtonRef.current?.focus();
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape' || event.key === 'Enter') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [onClose]);
+
+    return (
+        React.createElement('div', {
+            className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 font-['Cocon_Next_Arabic'] no-print",
+            onClick: onClose,
+            role: "alertdialog",
+            "aria-modal": "true",
+            "aria-labelledby": "alert-message"
+        },
+            React.createElement('div', {
+                className: "bg-slate-800/80 p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md text-center",
+                onClick: (e) => e.stopPropagation(),
+                role: "document"
+            },
+                React.createElement('p', { id: "alert-message", className: "text-slate-200 text-lg mb-8 leading-relaxed" }, message),
+                React.createElement('button', {
+                    ref: closeButtonRef,
+                    onClick: onClose,
+                    className: "bg-teal-500 text-slate-900 font-bold py-2 px-8 rounded-lg shadow-lg hover:bg-teal-400 transition-all duration-200"
+                }, "حسنًا")
+            )
+        )
+    );
+};
+
 
 // --- ConfirmationModal Component ---
 const ConfirmationModal = ({
@@ -134,7 +279,7 @@ const ConfirmationModal = ({
 
     return (
         React.createElement('div', {
-            className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 font-['Cocon_Next_Arabic']",
+            className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 font-['Cocon_Next_Arabic'] no-print",
             onClick: onClose,
             role: "dialog",
             "aria-modal": "true",
@@ -188,7 +333,7 @@ const PasswordModal = ({ onSubmit, onClose }) => {
 
   return (
     React.createElement('div', {
-        className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 font-['Cocon_Next_Arabic']",
+        className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 font-['Cocon_Next_Arabic'] no-print",
         onClick: onClose
     },
         React.createElement('div', {
@@ -216,13 +361,29 @@ const PasswordModal = ({ onSubmit, onClose }) => {
 };
 
 // --- AdminDashboard Component ---
-const AdminDashboard = ({ history, onResetCounter }) => {
+const AdminDashboard = ({ 
+    history, 
+    onResetCounter, 
+    onDownloadPdfReport,
+    onDownloadExcelReport,
+    reportRef 
+}) => {
   if (history.length === 0) {
     return (
       React.createElement('div', { className: "w-full max-w-4xl mx-auto p-4 space-y-6 text-center" },
-        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-10 rounded-2xl border border-slate-700" },
-          React.createElement('h3', { className: "text-2xl font-bold text-slate-300" }, "لا توجد بيانات تحميل بعد"),
-          React.createElement('p', { className: "text-slate-400 mt-2" }, "ابدأ بتحميل الشهادات لترى الإحصائيات هنا.")
+        React.createElement('div', { ref: reportRef, className: "printable-area" }, 
+            React.createElement('div', { className: "print-header" },
+                React.createElement('h1', null, "تقرير إحصائيات صناعيو المستقبل"),
+                React.createElement('p', null, `تاريخ الطباعة: ${new Date().toLocaleString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', numberingSystem: 'latn' })}`)
+            ),
+            React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-10 rounded-2xl border border-slate-700 print-card" },
+              React.createElement('h3', { className: "text-2xl font-bold text-slate-300" }, "لا توجد بيانات تحميل بعد"),
+              React.createElement('p', { className: "text-slate-400 mt-2" }, "ابدأ بتحميل الشهادات لترى الإحصائيات هنا.")
+            )
+        ),
+         React.createElement('div', { className: "flex justify-center gap-4 no-print mt-6" },
+              React.createElement('button', { onClick: onDownloadPdfReport, className: "bg-purple-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-purple-500 transition-all duration-200" }, "تحميل PDF"),
+              React.createElement('button', { onClick: onDownloadExcelReport, className: "bg-green-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-green-500 transition-all duration-200" }, "تصدير Excel")
         ),
         React.createElement('div', { className: "bg-red-900/20 backdrop-blur-sm p-6 rounded-2xl border border-red-500/30 mt-8 no-print" },
             React.createElement('h3', { className: "text-xl font-bold text-red-400 mb-2" }, "منطقة الخطر"),
@@ -238,6 +399,8 @@ const AdminDashboard = ({ history, onResetCounter }) => {
 
   const totalDownloads = history.length;
   const pngDownloads = history.filter(item => item.format === 'png').length;
+  const pdfDownloads = totalDownloads - pngDownloads;
+  
   const downloadsByTypeMap = history.reduce((acc, curr) => {
       acc.set(curr.type, (acc.get(curr.type) || 0) + 1);
       return acc;
@@ -245,61 +408,109 @@ const AdminDashboard = ({ history, onResetCounter }) => {
   const downloadsByType = Array.from(downloadsByTypeMap.entries())
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
-  const maxCount = Math.max(...downloadsByType.map(d => d.count), 0);
-  const recentActivity = history.slice(0, 5);
+  const maxTypeCount = Math.max(...downloadsByType.map(d => d.count), 0);
+
+  const downloadsBySchoolMap = history
+      .filter(item => item.school && item.school.trim() !== '' && item.school.trim() !== 'المدرســـة')
+      .reduce((acc, curr) => {
+          acc.set(curr.school, (acc.get(curr.school) || 0) + 1);
+          return acc;
+      }, new Map());
+  const downloadsBySchool = Array.from(downloadsBySchoolMap.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  const maxSchoolCount = Math.max(...downloadsBySchool.map(d => d.count), 0);
+      
+  const recentActivity = history.slice(0, 10);
 
   const formatTimestamp = (isoString) => {
     const date = new Date(isoString);
-    return date.toLocaleString('ar-SA', {
-        year: 'numeric', month: 'short', day: 'numeric',
+    return date.toLocaleString('ar-EG', {
+        year: 'numeric', month: 'long', day: 'numeric',
         hour: '2-digit', minute: '2-digit', hour12: true,
+        numberingSystem: 'latn'
     });
   };
 
   return (
-    React.createElement('div', { className: "w-full max-w-4xl mx-auto p-4 space-y-6 printable-area" },
-      React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6 no-print" },
-        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center" },
-          React.createElement('h3', { className: "text-slate-400 text-lg" }, "إجمالي التحميلات"),
-          React.createElement('p', { className: "text-4xl font-bold text-white" }, totalDownloads)
-        ),
-        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center" },
-            React.createElement('h3', { className: "text-slate-400 text-lg mb-3" }, "PNG vs PDF"),
-            React.createElement('div', { className: "w-24 h-24 rounded-full flex items-center justify-center", style: { background: `conic-gradient(#00a49a 0% ${pngDownloads / totalDownloads * 100}%, #8b5cf6 ${pngDownloads / totalDownloads * 100}% 100%)`} },
-                React.createElement('div', { className: "w-20 h-20 rounded-full bg-slate-800 flex flex-col items-center justify-center" },
-                     React.createElement('span', { className: "text-xs text-slate-300" }, totalDownloads),
-                     React.createElement('span', { className: "text-xs text-slate-400" }, "تحميل")
+    React.createElement('div', { className: "w-full max-w-5xl mx-auto p-4 space-y-6" },
+        React.createElement('div', { ref: reportRef, className: "printable-area bg-slate-900/50 backdrop-blur-sm p-4 rounded-2xl" }, 
+          React.createElement('div', { className: "print-header" },
+                React.createElement('h1', null, "تقرير إحصائيات صناعيو المستقبل"),
+                React.createElement('p', null, `تاريخ الطباعة: ${new Date().toLocaleString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', numberingSystem: 'latn' })}`)
+          ),
+          React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
+            React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center print-card" },
+              React.createElement('h3', { className: "text-slate-400 text-lg" }, "إجمالي التحميلات"),
+              React.createElement('p', { className: "text-4xl font-bold text-white" }, totalDownloads.toLocaleString('en-US'))
+            ),
+            React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center print-card" },
+                React.createElement('h3', { className: "text-slate-400 text-lg mb-3" }, "PNG vs PDF"),
+                React.createElement('div', { className: "w-24 h-24 rounded-full flex items-center justify-center donut-chart-visual", style: { background: `conic-gradient(#00a49a 0% ${pngDownloads / totalDownloads * 100}%, #8b5cf6 ${pngDownloads / totalDownloads * 100}% 100%)`} },
+                    React.createElement('div', { className: "w-20 h-20 rounded-full bg-slate-800 flex flex-col items-center justify-center" },
+                         React.createElement('span', { className: "text-xs text-slate-300" }, totalDownloads.toLocaleString('en-US')),
+                         React.createElement('span', { className: "text-xs text-slate-400" }, "تحميل")
+                    )
+                ),
+                React.createElement('div', { className: "donut-chart-print-summary text-right space-y-1" },
+                  React.createElement('p', null, `PNG: ${pngDownloads.toLocaleString('en-US')} تحميل (${totalDownloads > 0 ? ((pngDownloads / totalDownloads) * 100).toFixed(1) : 0}%)`),
+                  React.createElement('p', null, `PDF: ${pdfDownloads.toLocaleString('en-US')} تحميل (${totalDownloads > 0 ? ((pdfDownloads / totalDownloads) * 100).toFixed(1) : 0}%)`)
                 )
             )
-        )
-      ),
-      React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
-        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700" },
-          React.createElement('h3', { className: "text-xl font-bold text-white mb-4" }, "التحميلات حسب نوع الشهادة"),
-          React.createElement('div', { className: "space-y-3" }, downloadsByType.map((item) => (
-              React.createElement('div', { key: item.name, className: "flex items-center gap-4 text-sm" },
-                React.createElement('span', { className: "w-20 text-slate-300" }, item.name),
-                React.createElement('div', { className: "flex-1 bg-slate-700 rounded-full h-6" },
-                  React.createElement('div', {
-                    className: "bg-teal-500 h-6 rounded-full flex items-center justify-center",
-                    style: { width: `${(item.count / maxCount) * 100}%` }
-                  }, React.createElement('span', { className: "text-white font-semibold text-xs" }, item.count))
-                )
-              )
-          )))
+          ),
+          React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6" },
+            React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 print-card" },
+              React.createElement('h3', { className: "text-xl font-bold text-white mb-4" }, "التحميلات حسب نوع الشهادة"),
+              React.createElement('div', { className: "space-y-3 max-h-60 overflow-y-auto pr-2" }, downloadsByType.map((item) => (
+                  React.createElement('div', { key: item.name, className: "flex items-center gap-4 text-sm" },
+                    React.createElement('span', { className: "w-20 text-slate-300 truncate" }, item.name),
+                    React.createElement('div', { className: "flex-1 bg-slate-700 rounded-full h-6" },
+                      React.createElement('div', {
+                        className: "bg-teal-500 h-6 rounded-full flex items-center justify-center print-bar",
+                        style: { width: `${(item.count / maxTypeCount) * 100}%` }
+                      }, React.createElement('span', { className: "text-white font-semibold text-xs print-bar-text" }, item.count.toLocaleString('en-US')))
+                    )
+                  )
+              )))
+            ),
+            React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 print-card" },
+              React.createElement('h3', { className: "text-xl font-bold text-white mb-4" }, "التحميلات حسب المدرسة"),
+               downloadsBySchool.length > 0 ?
+                  React.createElement('div', { className: "space-y-3 max-h-60 overflow-y-auto pr-2" }, downloadsBySchool.map((item) => (
+                    React.createElement('div', { key: item.name, className: "flex items-center gap-4 text-sm" },
+                      React.createElement('span', { className: "w-56 text-slate-300 truncate", title: item.name }, item.name),
+                      React.createElement('div', { className: "flex-1 bg-slate-700 rounded-full h-6" },
+                        React.createElement('div', {
+                          className: "bg-purple-500 h-6 rounded-full flex items-center justify-center print-bar",
+                          style: { width: `${(item.count / maxSchoolCount) * 100}%` }
+                        }, React.createElement('span', { className: "text-white font-semibold text-xs print-bar-text" }, item.count.toLocaleString('en-US')))
+                      )
+                    )
+                ))) :
+                React.createElement('p', { className: "text-slate-400" }, "لم يتم تسجيل أي تحميلات بأسماء مدارس بعد.")
+            )
+          ),
+           React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 mt-6 print-card" },
+              React.createElement('h3', { className: "text-xl font-bold text-white mb-4" }, "آخر النشاطات"),
+              React.createElement('div', { className: "space-y-2 max-h-60 overflow-y-auto" }, recentActivity.map((activity, index) => (
+                    React.createElement('div', { key: index, className: "flex flex-col sm:flex-row justify-between items-start sm:items-center text-sm p-2 border-b border-slate-700 last:border-b-0 gap-2 sm:gap-4 print-table-row" },
+                        React.createElement('div', {className: "flex-1"},
+                            React.createElement('p', { className: "text-slate-200" }, "الاسم: ", React.createElement('span', { className: "font-semibold text-teal-400" }, activity.student || 'غير محدد'))
+                        ),
+                         React.createElement('div', {className: "flex-1"},
+                            React.createElement('p', { className: "text-slate-200" }, "المدرسة: ", React.createElement('span', { className: "font-semibold text-white truncate" }, activity.school || 'غير محدد'))
+                        ),
+                        React.createElement('div', {className: "flex-1"},
+                            React.createElement('p', { className: "text-slate-200" }, "النوع: ", React.createElement('span', { className: "font-semibold text-purple-400" }, activity.type))
+                        ),
+                        React.createElement('span', { className: "text-slate-400 text-xs" }, formatTimestamp(activity.timestamp))
+                    )
+              )))
+            )
         ),
-        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700" },
-          React.createElement('h3', { className: "text-xl font-bold text-white mb-4" }, "آخر النشاطات"),
-          React.createElement('div', { className: "space-y-2" }, recentActivity.map((activity, index) => (
-                React.createElement('div', { key: index, className: "flex justify-between items-center text-sm p-2 border-b border-slate-700 last:border-b-0" },
-                    React.createElement('span', { className: "text-slate-200" }, "نوع الشهادة: ", React.createElement('span', { className: "font-semibold text-teal-400" }, activity.type)),
-                    React.createElement('span', { className: "text-slate-400" }, formatTimestamp(activity.timestamp))
-                )
-          )))
-        )
-      ),
-      React.createElement('div', { className: "text-center no-print" },
-        React.createElement('button', { onClick: () => window.print(), className: "bg-slate-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-slate-500 transition-all duration-200" }, "طباعة التقرير")
+      React.createElement('div', { className: "flex justify-center gap-4 no-print mt-6" },
+        React.createElement('button', { onClick: onDownloadPdfReport, className: "bg-purple-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-purple-500 transition-all duration-200" }, "تحميل PDF"),
+        React.createElement('button', { onClick: onDownloadExcelReport, className: "bg-green-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-green-500 transition-all duration-200" }, "تصدير Excel")
       ),
       React.createElement('div', { className: "bg-red-900/20 backdrop-blur-sm p-6 rounded-2xl border border-red-500/30 mt-8 no-print" },
           React.createElement('h3', { className: "text-xl font-bold text-red-400 mb-2" }, "منطقة الخطر"),
@@ -336,19 +547,27 @@ const CertificatePreview = ({
     React.createElement('div', { className: "w-full max-w-4xl mx-auto flex flex-col items-center" },
       React.createElement('div', {
           ref: previewRef,
-          className: "w-full aspect-[1.414/1] bg-white rounded-2xl shadow-2xl relative overflow-hidden"
+          className: "w-full aspect-[1.414/1] bg-white rounded-2xl shadow-2xl relative overflow-hidden" 
       },
           React.createElement('div', { className: "absolute inset-0" },
-            React.createElement('img', { src: templateUrl, className: "w-full h-full object-cover", alt: "Certificate Background" }),
+            React.createElement('img', { 
+                src: templateUrl, 
+                className: "w-full h-full object-cover rounded-2xl", 
+                alt: "Certificate Background",
+                crossOrigin: "anonymous"
+            }),
             Object.keys(elements).map((key) => {
               const element = elements[key];
-              const MAX_FONT_SIZE = element.fontSize;
-              const MIN_FONT_SIZE = 14;
+              const MAX_FONT_SIZE = 19;
+              const MIN_FONT_SIZE = 13;
               const MAX_WIDTH = 896;
               const MIN_WIDTH = 375;
               const clampedWidth = Math.max(MIN_WIDTH, Math.min(containerWidth, MAX_WIDTH));
               const factor = (clampedWidth - MIN_WIDTH) / (MAX_WIDTH - MIN_WIDTH);
               const scaledFontSize = MIN_FONT_SIZE + (MAX_FONT_SIZE - MIN_FONT_SIZE) * factor;
+              
+              const placeholderText = key === 'name' ? 'الاســـم' : 'المدرســـة';
+              const textToRender = element.text || placeholderText;
 
               return (
                 React.createElement('div', {
@@ -364,13 +583,80 @@ const CertificatePreview = ({
                     whiteSpace: 'nowrap',
                     direction: 'rtl',
                   }
-                }, element.text)
+                }, textToRender)
               );
             })
           )
       )
     )
   );
+};
+
+// --- SearchableDropdown Component ---
+const SearchableDropdown = ({ options, value, onChange, placeholder }) => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [isOpen, setIsOpen] = useState(false);
+    const wrapperRef = useRef(null);
+    
+     useEffect(() => {
+        if (value) {
+            setSearchTerm(value);
+        } else {
+            setSearchTerm('');
+        }
+    }, [value]);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [wrapperRef]);
+    
+    const filteredOptions = options.filter(option => 
+        option.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const handleSelect = (option) => {
+        onChange(option);
+        setIsOpen(false);
+    };
+
+    const handleInputChange = (e) => {
+        const newValue = e.target.value;
+        setSearchTerm(newValue);
+        if(!isOpen) setIsOpen(true);
+        if (newValue === '') {
+            onChange('');
+        }
+    };
+
+    return React.createElement('div', { className: "relative w-full", ref: wrapperRef },
+        React.createElement('input', {
+            type: "text",
+            placeholder: placeholder,
+            value: searchTerm,
+            onChange: handleInputChange,
+            onFocus: () => setIsOpen(true),
+            className: "w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 text-right"
+        }),
+        isOpen && filteredOptions.length > 0 && React.createElement('ul', {
+            className: "absolute top-full left-0 right-0 mt-1 bg-slate-700 border border-slate-600 rounded-lg z-20 max-h-48 overflow-y-auto"
+        },
+            filteredOptions.map(option => 
+                React.createElement('li', {
+                    key: option,
+                    onClick: () => handleSelect(option),
+                    className: "px-4 py-2 text-right text-white hover:bg-teal-500 hover:text-slate-900 cursor-pointer"
+                }, option)
+            )
+        )
+    );
 };
 
 // --- Controls Component ---
@@ -389,7 +675,7 @@ const Controls = ({
   const activeColor = nameElement?.color || TEXT_COLORS[0];
 
   return (
-    React.createElement('div', { className: "w-full max-w-4xl mx-auto space-y-3" },
+    React.createElement('div', { className: "w-full max-w-4xl mx-auto space-y-3 relative z-10 no-print" },
       React.createElement('div', { className: "grid grid-cols-3 sm:grid-cols-6 gap-2" },
         CERTIFICATE_TEMPLATES.map((template) => (
           React.createElement('button', {
@@ -417,12 +703,11 @@ const Controls = ({
         ),
         schoolElement && (
             React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-700" },
-                React.createElement('input', {
-                    type: "text",
-                    placeholder: 'المدرسة',
+                 React.createElement(SearchableDropdown, {
+                    options: JEDDAH_SCHOOLS,
                     value: schoolElement.text,
-                    onChange: (e) => onElementChange(schoolElement.id, { text: e.target.value }),
-                    className: "w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 text-right"
+                    onChange: (newValue) => onElementChange(schoolElement.id, { text: newValue }),
+                    placeholder: 'ابحث عن المدرسة أو اختر'
                 })
             )
         ),
@@ -463,12 +748,12 @@ const App = () => {
   
   const getInitialElements = useCallback(() => ({
     name: {
-      id: 'name', text: 'الاســـم', position: { x: 67, y: 37.5 },
-      fontSize: 17, color: TEXT_COLORS[1],
+      id: 'name', text: '', position: { x: 67, y: 37.5 },
+      fontSize: 19, color: TEXT_COLORS[1],
     },
     school: {
-      id: 'school', text: 'المدرســـة', position: { x: 67, y: 43 },
-      fontSize: 17, color: TEXT_COLORS[1],
+      id: 'school', text: '', position: { x: 67, y: 43 },
+      fontSize: 19, color: TEXT_COLORS[1],
     },
   }), []);
 
@@ -478,6 +763,9 @@ const App = () => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+
   
   const [downloadHistory, setDownloadHistory] = useState(() => {
     const savedHistory = localStorage.getItem('downloadHistory');
@@ -485,6 +773,7 @@ const App = () => {
   });
 
   const previewRef = useRef(null);
+  const reportRef = useRef(null);
 
   useEffect(() => {
     const canvas = document.getElementById('network-canvas');
@@ -516,16 +805,32 @@ const App = () => {
   const handleGlobalColorChange = (color) => setElements(prev => { const newElements = {...prev}; for(const key in newElements) { newElements[key].color = color; } return newElements; });
   
   const handleDownload = async (format) => {
+    const studentNameValue = elements['name']?.text.trim();
+    const schoolNameValue = elements['school']?.text.trim();
+
+    if (!studentNameValue || !schoolNameValue) {
+      setAlertMessage("الشهادة جاهزة تقريباً! لمسة أخيرة بسيطة: يرجى إضافة اسم صاحب الإنجاز والمدرسة التي يمثلها لتكتمل فرحة التكريم.");
+      setShowAlertModal(true);
+      return;
+    }
+      
     if (!previewRef.current) return;
     setIsLoading(true);
     try {
+        const studentName = studentNameValue || 'شهادة';
+        const schoolName = schoolNameValue || 'غير محدد';
         const dataUrl = await toPng(previewRef.current, { quality: 1, pixelRatio: 3, backgroundColor: 'white' });
-        let count = parseInt(localStorage.getItem('downloadCount') || '0', 10);
-        count++;
-        localStorage.setItem('downloadCount', String(count));
-        const studentName = elements['name']?.text.trim() || 'شهادة';
+        
+        localStorage.setItem('downloadCount', String( (parseInt(localStorage.getItem('downloadCount') || '0', 10)) + 1 ));
+        
         const filename = `شهادة صناعيو المستقبل_${studentName}`;
-        const newRecord = { type: selectedTemplateId, format, timestamp: new Date().toISOString() };
+        const newRecord = { 
+            type: selectedTemplateId, 
+            format, 
+            timestamp: new Date().toISOString(),
+            student: studentName,
+            school: schoolName,
+        };
         const updatedHistory = [newRecord, ...downloadHistory];
         setDownloadHistory(updatedHistory);
         localStorage.setItem('downloadHistory', JSON.stringify(updatedHistory));
@@ -546,15 +851,61 @@ const App = () => {
     } catch (error) { console.error('Download error:', error); } finally { setIsLoading(false); }
   };
 
+    const handleDownloadPdfReport = async () => {
+        if (!reportRef.current) return;
+        try {
+            const dataUrl = await toPng(reportRef.current, { 
+                quality: 1, 
+                pixelRatio: 2,
+                backgroundColor: '#0f172a' // Match background for consistent look
+            });
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' });
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgProps = pdf.getImageProperties(dataUrl);
+            const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgHeight);
+            pdf.save(`تقرير صناعيو المستقبل - ${new Date().toLocaleDateString('ar-SA')}.pdf`);
+        } catch (error) {
+            console.error('Error generating PDF report:', error);
+        }
+    };
+
+    const handleDownloadExcelReport = () => {
+        if (downloadHistory.length === 0) return;
+        const headers = ['الوقت', 'اسم الطالب', 'المدرسة', 'نوع الشهادة', 'الصيغة'];
+        const rows = downloadHistory.map(row => 
+            [
+                new Date(row.timestamp).toLocaleString('ar-SA'),
+                `"${row.student}"`,
+                `"${row.school}"`,
+                row.type,
+                row.format
+            ].join(',')
+        );
+        const csvContent = "\uFEFF" + [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `تقرير تحميلات صناعيو المستقبل.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
   const handleAdminClick = () => { if (isAdminAuthenticated) { setShowAdmin(!showAdmin); } else { setShowPasswordModal(true); } };
-  const handlePasswordSubmit = (password) => { if (password === 'AdminFuture') { setIsAdminAuthenticated(true); setShowPasswordModal(false); setShowAdmin(true); } else { alert('كلمة المرور غير صحيحة'); } };
+  const handlePasswordSubmit = (password) => { if (password === 'AdminFuture') { setIsAdminAuthenticated(true); setShowPasswordModal(false); setShowAdmin(true); } else { setAlertMessage('كلمة المرور غير صحيحة'); setShowAlertModal(true); } };
   const handleResetCounter = () => setShowResetConfirm(true);
-  const executeReset = () => { localStorage.setItem('downloadCount', '0'); localStorage.removeItem('downloadHistory'); setDownloadHistory([]); alert('تم إعادة تعيين عداد وسجل التحميلات بنجاح.'); };
+  const executeReset = () => { localStorage.setItem('downloadCount', '0'); localStorage.removeItem('downloadHistory'); setDownloadHistory([]); };
 
   return (
     React.createElement(React.Fragment, null,
-      React.createElement('div', { className: `min-h-screen text-white flex flex-col items-center p-4 font-['Cocon_Next_Arabic'] w-full overflow-x-hidden ${showAdmin ? 'overflow-y-auto' : 'overflow-y-hidden'}` },
-        React.createElement('header', { className: "w-full max-w-4xl mx-auto flex justify-between items-center p-4 z-10 relative" },
+      React.createElement('div', { className: `min-h-screen text-white flex flex-col items-center p-4 font-['Cocon_Next_Arabic'] w-full` },
+        React.createElement('header', { className: "w-full max-w-4xl mx-auto flex justify-between items-center p-4 z-10 relative no-print" },
             React.createElement('h1', { className: "text-2xl sm:text-4xl font-bold text-white tracking-widest" }, "صنـــاعيــــو المستقبـــــل"),
             React.createElement('button', { onClick: handleAdminClick, className: "text-white hover:text-teal-400 transition-colors p-2" },
                  showAdmin ? React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" }))
@@ -562,7 +913,13 @@ const App = () => {
             )
         ),
         React.createElement('main', { className: "w-full flex-grow flex flex-col items-center justify-start gap-2" },
-           showAdmin ? React.createElement(AdminDashboard, { history: downloadHistory, onResetCounter: handleResetCounter })
+           showAdmin ? React.createElement(AdminDashboard, { 
+                history: downloadHistory, 
+                onResetCounter: handleResetCounter,
+                onDownloadPdfReport: handleDownloadPdfReport,
+                onDownloadExcelReport: handleDownloadExcelReport,
+                reportRef: reportRef
+            })
            : React.createElement(React.Fragment, null,
                React.createElement(Controls, {
                  elements, selectedTemplateId,
@@ -588,6 +945,10 @@ const App = () => {
             confirmText: "نعم، أعد التعيين",
             onConfirm: executeReset,
             onClose: () => setShowResetConfirm(false)
+      }),
+      showAlertModal && React.createElement(AlertModal, {
+        message: alertMessage,
+        onClose: () => setShowAlertModal(false)
       })
     )
   );
