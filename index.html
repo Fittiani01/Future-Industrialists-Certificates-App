@@ -10,13 +10,15 @@
     "react": "https://esm.sh/react@18.2.0",
     "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
     "jspdf": "https://esm.sh/jspdf@2.5.1",
-    "html-to-image": "https://esm.sh/html-to-image@1.11.11",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.77.0"
+    "html-to-image": "https://esm.sh/html-to-image@1.11.11"
   }
 }
 </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <!-- Add SDKs for Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
       @font-face {
         font-family: 'Cocon Next Arabic';
@@ -139,6 +141,25 @@ import ReactDOM from 'react-dom/client';
 import { jsPDF } from 'jspdf';
 import { toPng } from 'html-to-image';
 
+// --- Firebase Setup ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-IY",
+  authDomain: "future-industrialists.firebaseapp.com",
+  databaseURL: "https://future-industrialists-default-rtdb.firebaseio.com",
+  projectId: "future-industrialists",
+  storageBucket: "future-industrialists.firebasestorage.app",
+  messagingSenderId: "282582549925",
+  appId: "1:282582549925:web:384d9ca0f1171d3a65144c",
+  measurementId: "G-T76W2FKP9L"
+};
+
+// Initialize Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const database = firebase.database();
+
+
 // --- Constants ---
 const TEMPLATE_IDS = [
   '1RHNRp9JspPoiHzPTENOxDVmwnsEtykbA', // طالب
@@ -256,6 +277,7 @@ const ConfirmationModal = ({
   cancelText = 'إلغاء',
   onConfirm,
   onClose,
+  variant = 'danger'
 }) => {
     const confirmButtonRef = useRef(null);
     
@@ -277,6 +299,11 @@ const ConfirmationModal = ({
         onConfirm();
         onClose();
     };
+    
+    const titleColor = variant === 'danger' ? 'text-red-400' : 'text-amber-400';
+    const buttonClasses = variant === 'danger' 
+        ? "bg-red-600 hover:bg-red-500 focus:ring-red-400" 
+        : "bg-amber-500 text-slate-900 hover:bg-amber-400 focus:ring-amber-300";
 
     return (
         React.createElement('div', {
@@ -291,7 +318,7 @@ const ConfirmationModal = ({
                 onClick: (e) => e.stopPropagation(),
                 role: "document"
             },
-                React.createElement('h2', { id: "confirmation-title", className: "text-2xl font-bold text-red-400 mb-4 text-center" }, title),
+                React.createElement('h2', { id: "confirmation-title", className: `text-2xl font-bold ${titleColor} mb-4 text-center` }, title),
                 React.createElement('p', { className: "text-slate-300 mb-8 text-center" }, message),
                 React.createElement('div', { className: "flex justify-center gap-4" },
                     React.createElement('button', {
@@ -301,7 +328,7 @@ const ConfirmationModal = ({
                     React.createElement('button', {
                         ref: confirmButtonRef,
                         onClick: handleConfirmClick,
-                        className: "bg-red-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-slate-800"
+                        className: `text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 ${buttonClasses}`
                     }, confirmText)
                 )
             )
@@ -361,14 +388,51 @@ const PasswordModal = ({ onSubmit, onClose }) => {
   );
 };
 
+// --- AdminDashboardSkeleton Component ---
+const AdminDashboardSkeleton = () => {
+    return React.createElement('div', { className: "w-full max-w-5xl mx-auto p-4 space-y-6 animate-pulse" },
+        React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
+            React.createElement('div', { className: "bg-slate-800/50 h-[110px] rounded-2xl border border-slate-700" }),
+            React.createElement('div', { className: "bg-slate-800/50 h-[110px] rounded-2xl border border-slate-700" })
+        ),
+        React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6" },
+            React.createElement('div', { className: "bg-slate-800/50 p-6 rounded-2xl border border-slate-700 space-y-4 h-[264px]" },
+                React.createElement('div', { className: "h-6 bg-slate-700 rounded w-1/3" }),
+                React.createElement('div', { className: "h-6 bg-slate-700 rounded" }),
+                React.createElement('div', { className: "h-6 bg-slate-700 rounded" }),
+                React.createElement('div', { className: "h-6 bg-slate-700 rounded" }),
+                React.createElement('div', { className: "h-6 bg-slate-700 rounded" })
+            ),
+            React.createElement('div', { className: "bg-slate-800/50 p-6 rounded-2xl border border-slate-700 space-y-4 h-[264px]" },
+                React.createElement('div', { className: "h-6 bg-slate-700 rounded w-1/3" }),
+                React.createElement('div', { className: "h-6 bg-slate-700 rounded" }),
+                React.createElement('div', { className: "h-6 bg-slate-700 rounded" }),
+                React.createElement('div', { className: "h-6 bg-slate-700 rounded" }),
+                React.createElement('div', { className: "h-6 bg-slate-700 rounded" })
+            )
+        ),
+        React.createElement('div', { className: "bg-slate-800/50 p-6 rounded-2xl border border-slate-700 mt-6 space-y-4 h-[264px]" },
+            React.createElement('div', { className: "h-6 bg-slate-700 rounded w-1/4" }),
+            React.createElement('div', { className: "h-10 bg-slate-700 rounded mt-4" }),
+            React.createElement('div', { className: "h-10 bg-slate-700 rounded" }),
+            React.createElement('div', { className: "h-10 bg-slate-700 rounded" })
+        )
+    );
+};
+
 // --- AdminDashboard Component ---
 const AdminDashboard = ({ 
-    history, 
+    history,
+    isLoading, 
     onResetCounter, 
     onDownloadPdfReport,
     onDownloadExcelReport,
     reportRef 
 }) => {
+  if (isLoading) {
+    return React.createElement(AdminDashboardSkeleton);
+  }
+
   if (history.length === 0) {
     return (
       React.createElement('div', { className: "w-full max-w-4xl mx-auto p-4 space-y-6 text-center" },
@@ -388,11 +452,11 @@ const AdminDashboard = ({
         ),
         React.createElement('div', { className: "bg-red-900/20 backdrop-blur-sm p-6 rounded-2xl border border-red-500/30 mt-8 no-print" },
             React.createElement('h3', { className: "text-xl font-bold text-red-400 mb-2" }, "منطقة الخطر"),
-            React.createElement('p', { className: "text-red-300/80 text-sm mb-4" }, "لا تستخدم هذا الزر إلا في بداية استخدام النظام لأول مرة. سيؤدي هذا الإجراء إلى إعادة تعيين عداد أسماء الملفات إلى الصفر."),
+            React.createElement('p', { className: "text-red-300/80 text-sm mb-4" }, "سيؤدي هذا الإجراء إلى حذف جميع الإحصائيات وسجل التحميلات بشكل نهائي من قاعدة البيانات."),
             React.createElement('button', {
                 onClick: onResetCounter,
                 className: "bg-red-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-500 transition-all duration-200"
-            }, "إعادة تعيين عداد التحميل")
+            }, "إعادة تعيين كافة البيانات")
         )
       )
     );
@@ -447,7 +511,7 @@ const AdminDashboard = ({
             ),
             React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center print-card" },
                 React.createElement('h3', { className: "text-slate-400 text-lg mb-3" }, "PNG vs PDF"),
-                React.createElement('div', { className: "w-24 h-24 rounded-full flex items-center justify-center donut-chart-visual", style: { background: `conic-gradient(#00a49a 0% ${pngDownloads / totalDownloads * 100}%, #8b5cf6 ${pngDownloads / totalDownloads * 100}% 100%)`} },
+                React.createElement('div', { className: "w-24 h-24 rounded-full flex items-center justify-center donut-chart-visual", style: { background: `conic-gradient(#00a49a 0% ${totalDownloads > 0 ? pngDownloads / totalDownloads * 100 : 0}%, #8b5cf6 ${totalDownloads > 0 ? pngDownloads / totalDownloads * 100 : 0}% 100%)`} },
                     React.createElement('div', { className: "w-20 h-20 rounded-full bg-slate-800 flex flex-col items-center justify-center" },
                          React.createElement('span', { className: "text-xs text-slate-300" }, totalDownloads.toLocaleString('en-US')),
                          React.createElement('span', { className: "text-xs text-slate-400" }, "تحميل")
@@ -468,7 +532,7 @@ const AdminDashboard = ({
                     React.createElement('div', { className: "flex-1 bg-slate-700 rounded-full h-6" },
                       React.createElement('div', {
                         className: "bg-teal-500 h-6 rounded-full flex items-center justify-center print-bar",
-                        style: { width: `${(item.count / maxTypeCount) * 100}%` }
+                        style: { width: `${maxTypeCount > 0 ? (item.count / maxTypeCount) * 100 : 0}%` }
                       }, React.createElement('span', { className: "text-white font-semibold text-xs print-bar-text" }, item.count.toLocaleString('en-US')))
                     )
                   )
@@ -483,7 +547,7 @@ const AdminDashboard = ({
                       React.createElement('div', { className: "flex-1 bg-slate-700 rounded-full h-6" },
                         React.createElement('div', {
                           className: "bg-purple-500 h-6 rounded-full flex items-center justify-center print-bar",
-                          style: { width: `${(item.count / maxSchoolCount) * 100}%` }
+                          style: { width: `${maxSchoolCount > 0 ? (item.count / maxSchoolCount) * 100 : 0}%` }
                         }, React.createElement('span', { className: "text-white font-semibold text-xs print-bar-text" }, item.count.toLocaleString('en-US')))
                       )
                     )
@@ -515,11 +579,11 @@ const AdminDashboard = ({
       ),
       React.createElement('div', { className: "bg-red-900/20 backdrop-blur-sm p-6 rounded-2xl border border-red-500/30 mt-8 no-print" },
           React.createElement('h3', { className: "text-xl font-bold text-red-400 mb-2" }, "منطقة الخطر"),
-          React.createElement('p', { className: "text-red-300/80 text-sm mb-4" }, "لا تستخدم هذا الزر إلا في بداية استخدام النظام لأول مرة. سيؤدي هذا الإجراء إلى إعادة تعيين عداد أسماء الملفات إلى الصفر."),
+          React.createElement('p', { className: "text-red-300/80 text-sm mb-4" }, "سيؤدي هذا الإجراء إلى حذف جميع الإحصائيات وسجل التحميلات بشكل نهائي من قاعدة البيانات."),
           React.createElement('button', {
             onClick: onResetCounter,
             className: "bg-red-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-red-500 transition-all duration-200"
-          }, "إعادة تعيين عداد التحميل")
+          }, "إعادة تعيين كافة البيانات")
       )
     )
   );
@@ -745,8 +809,6 @@ const Controls = ({
 
 // --- App Component ---
 const App = () => {
-  const [selectedTemplateId, setSelectedTemplateId] = useState(CERTIFICATE_TEMPLATES[0].id);
-  
   const getInitialElements = useCallback(() => ({
     name: {
       id: 'name', text: '', position: { x: 67, y: 37.5 },
@@ -758,7 +820,24 @@ const App = () => {
     },
   }), []);
 
-  const [elements, setElements] = useState(getInitialElements());
+  const [selectedTemplateId, setSelectedTemplateId] = useState(() => {
+    const savedTemplateId = localStorage.getItem('selectedTemplateId');
+    return savedTemplateId || CERTIFICATE_TEMPLATES[0].id;
+  });
+
+  const [elements, setElements] = useState(() => {
+    try {
+        const savedElements = localStorage.getItem('certificateElements');
+        if (savedElements) {
+            const parsed = JSON.parse(savedElements);
+            if (parsed.name && parsed.school) {
+                return parsed;
+            }
+        }
+    } catch (e) { console.error("Could not parse certificate elements from localStorage", e); }
+    return getInitialElements();
+  });
+  
   const [isLoading, setIsLoading] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
@@ -766,15 +845,44 @@ const App = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-
   
-  const [downloadHistory, setDownloadHistory] = useState(() => {
-    const savedHistory = localStorage.getItem('downloadHistory');
-    try { return savedHistory ? JSON.parse(savedHistory) : []; } catch (e) { return []; }
-  });
+  const [downloadHistory, setDownloadHistory] = useState([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   const previewRef = useRef(null);
   const reportRef = useRef(null);
+
+  useEffect(() => {
+      localStorage.setItem('selectedTemplateId', selectedTemplateId);
+  }, [selectedTemplateId]);
+
+  useEffect(() => {
+      localStorage.setItem('certificateElements', JSON.stringify(elements));
+  }, [elements]);
+
+  useEffect(() => {
+    // Check if the firebaseConfig has been updated
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("الصق-مفتاحك-هنا")) {
+      console.warn("Firebase is not configured. Please paste your firebaseConfig.");
+      setIsDataLoading(false); // Stop loading to show a message or empty state
+      return;
+    }
+    
+    const statsRef = database.ref('stats/downloadHistory');
+    const listener = statsRef.orderByChild('timestamp').on('value', (snapshot) => {
+        const historyData = snapshot.val();
+        if (historyData) {
+            const historyArray = Object.values(historyData).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            setDownloadHistory(historyArray);
+        } else {
+            setDownloadHistory([]);
+        }
+        setIsDataLoading(false);
+    });
+    // Cleanup listener on unmount
+    return () => statsRef.off('value', listener);
+  }, []);
+
 
   useEffect(() => {
     const canvas = document.getElementById('network-canvas');
@@ -826,8 +934,6 @@ const App = () => {
         const schoolName = schoolNameValue || 'غير محدد';
         const dataUrl = await toPng(previewRef.current, { quality: 1, pixelRatio: 3, backgroundColor: 'white' });
         
-        localStorage.setItem('downloadCount', String( (parseInt(localStorage.getItem('downloadCount') || '0', 10)) + 1 ));
-        
         const filename = `شهادة صناعيو المستقبل_${studentName}`;
         const newRecord = { 
             type: selectedTemplateId, 
@@ -836,9 +942,16 @@ const App = () => {
             student: studentName,
             school: schoolName,
         };
-        const updatedHistory = [newRecord, ...downloadHistory];
-        setDownloadHistory(updatedHistory);
-        localStorage.setItem('downloadHistory', JSON.stringify(updatedHistory));
+        
+        // Check if Firebase is configured before trying to write
+        if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("الصق-مفتاحك-هنا")) {
+            database.ref('stats/downloadHistory').push(newRecord);
+        } else {
+             console.warn("Firebase not configured. Download logged to console only.");
+             console.log(newRecord);
+        }
+
+
         if (format === 'png') {
             const link = document.createElement('a');
             link.download = `${filename}.png`;
@@ -905,7 +1018,22 @@ const App = () => {
   const handleAdminClick = () => { if (isAdminAuthenticated) { setShowAdmin(!showAdmin); } else { setShowPasswordModal(true); } };
   const handlePasswordSubmit = (password) => { if (password === 'AdminFuture') { setIsAdminAuthenticated(true); setShowPasswordModal(false); setShowAdmin(true); } else { setAlertMessage('كلمة المرور غير صحيحة'); setShowAlertModal(true); } };
   const handleResetCounter = () => setShowResetConfirm(true);
-  const executeReset = () => { localStorage.setItem('downloadCount', '0'); localStorage.removeItem('downloadHistory'); setDownloadHistory([]); };
+  const executeReset = () => { 
+    if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("الصق-مفتاحك-هنا")) {
+        database.ref('stats').remove(); 
+    } else {
+        console.warn("Firebase not configured. Reset action not performed.");
+    }
+  };
+
+  const UnconfiguredAdminView = () => (
+    React.createElement('div', { className: "w-full max-w-4xl mx-auto p-4 space-y-6 text-center" },
+      React.createElement('div', { className: "bg-amber-900/20 backdrop-blur-sm p-10 rounded-2xl border border-amber-500/30" },
+        React.createElement('h3', { className: "text-2xl font-bold text-amber-300" }, "الرجاء إعداد الربط مع Firebase"),
+        React.createElement('p', { className: "text-amber-200/80 mt-2" }, "لوحة التحكم معطلة لأن التطبيق غير متصل بقاعدة البيانات. يرجى اتباع التعليمات للصق مفاتيح الإعدادات في ملف index.html.")
+      )
+    )
+  );
 
   return (
     React.createElement(React.Fragment, null,
@@ -914,59 +1042,54 @@ const App = () => {
             React.createElement('h1', { className: "text-2xl sm:text-4xl font-bold text-white tracking-widest" }, "صنـــاعيــــو المستقبـــــل"),
             React.createElement('button', { onClick: handleAdminClick, className: "text-white hover:text-teal-400 transition-colors p-2" },
                  showAdmin ? React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" }))
-                 : React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" }), React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M15 12a3 3 0 11-6 0 3 3 0 016 0z" }))
+                 : React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572 1.066z" }), React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M15 12a3 3 0 11-6 0 3 3 0 016 0z" }))
             )
         ),
-        React.createElement('main', { className: "w-full flex-grow flex flex-col items-center justify-start gap-2" },
-           showAdmin ? React.createElement(AdminDashboard, { 
-                history: downloadHistory, 
-                onResetCounter: handleResetCounter,
-                onDownloadPdfReport: handleDownloadPdfReport,
-                onDownloadExcelReport: handleDownloadExcelReport,
-                reportRef: reportRef
-            })
-           : React.createElement(React.Fragment, null,
-               React.createElement(Controls, {
-                 elements, selectedTemplateId,
-                 onTemplateChange: handleTemplateChange,
-                 onElementChange: handleElementChange,
-                 onGlobalColorChange: handleGlobalColorChange,
-                 onDownloadPNG: () => handleDownload('png'),
-                 onDownloadPDF: () => handleDownload('pdf'),
-                 isLoading
-               }),
-               React.createElement(CertificatePreview, {
-                 previewRef,
-                 templateUrl: selectedTemplate.imageUrl,
-                 elements
-               })
-           )
-        )
-      ),
-      showPasswordModal && React.createElement(PasswordModal, { onSubmit: handlePasswordSubmit, onClose: () => setShowPasswordModal(false) }),
-      showResetConfirm && React.createElement(ConfirmationModal, {
-            title: "تأكيد إعادة التعيين",
-            message: "هل أنت متأكد أنك تريد إعادة تعيين عداد وسجل التحميلات إلى 0؟ لا يمكن التراجع عن هذا الإجراء.",
-            confirmText: "نعم، أعد التعيين",
-            onConfirm: executeReset,
-            onClose: () => setShowResetConfirm(false)
-      }),
-      showAlertModal && React.createElement(AlertModal, {
-        message: alertMessage,
-        onClose: () => setShowAlertModal(false)
-      })
+        React.createElement('main', { className: "w-full flex-grow flex flex-col items-center justify-center" },
+            showAdmin ? (
+                !firebaseConfig.apiKey || firebaseConfig.apiKey.includes("الصق-مفتاحك-هنا") 
+                ? React.createElement(UnconfiguredAdminView) 
+                : React.createElement(AdminDashboard, { 
+                    history: downloadHistory, 
+                    isLoading: isDataLoading,
+                    onResetCounter: handleResetCounter,
+                    onDownloadPdfReport: handleDownloadPdfReport,
+                    onDownloadExcelReport: handleDownloadExcelReport,
+                    reportRef: reportRef
+                 })
+            ) : (
+                 React.createElement(React.Fragment, null,
+                    React.createElement(Controls, {
+                        elements,
+                        selectedTemplateId,
+                        onTemplateChange: handleTemplateChange,
+                        onElementChange: handleElementChange,
+                        onGlobalColorChange: handleGlobalColorChange,
+                        onDownloadPNG: () => handleDownload('png'),
+                        onDownloadPDF: () => handleDownload('pdf'),
+                        isLoading,
+                    }),
+                    React.createElement('div', { className: "h-4" }),
+                    React.createElement(CertificatePreview, { templateUrl: selectedTemplate.imageUrl, elements, previewRef })
+                 )
+            )
+        ),
+        showPasswordModal && React.createElement(PasswordModal, { onSubmit: handlePasswordSubmit, onClose: () => setShowPasswordModal(false) }),
+        showResetConfirm && React.createElement(ConfirmationModal, { 
+            title: "تأكيد إعادة التعيين", 
+            message: "هل أنت متأكد من رغبتك في حذف جميع بيانات التحميل بشكل نهائي؟ لا يمكن التراجع عن هذا الإجراء.", 
+            onConfirm: executeReset, 
+            onClose: () => setShowResetConfirm(false) 
+        }),
+        showAlertModal && React.createElement(AlertModal, { message: alertMessage, onClose: () => setShowAlertModal(false) })
+      )
     )
   );
 };
 
-// --- Mount App ---
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
-}
-const root = ReactDOM.createRoot(rootElement);
-root.render(React.createElement(React.StrictMode, null, React.createElement(App)));
 
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(App));
     </script>
   </body>
 </html>
