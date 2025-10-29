@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>شهادات صناعيو المستقبل</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200..1000&family=Lalezar&family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
     <script type="importmap">
 {
   "imports": {
@@ -177,7 +180,15 @@ const CERTIFICATE_TEMPLATES = TEMPLATE_IDS.map((id, index) => ({
   label: LABELS[index],
   imageUrl: `https://lh3.googleusercontent.com/d/${id}=w1200`
 }));
-const TEXT_COLORS = ['#37346d', '#00a49a', '#4682B4', '#2F4F4F', '#606060'];
+const TEXT_COLORS = ['#37346d', '#00a49a', '#4682B4', '#606060'];
+const FONTS = [
+  { name: 'الخط الأساسي', familyName: 'Cocon Next Arabic', familyCSS: "'Cocon Next Arabic', sans-serif", url: 'https://firebasestorage.googleapis.com/v0/b/genai-409315.appspot.com/o/fonts%2FCoconNextArabic-Light.otf?alt=media&token=72863a35-86a0-4a25-b049-75c13e618f0a', format: 'opentype' },
+  { name: 'كايرو', familyName: 'Cairo', familyCSS: "'Cairo', sans-serif", url: 'https://fonts.gstatic.com/s/cairo/v28/SLXgc-MA-13aa-scHrU.woff2', format: 'woff2' },
+  { name: 'أميري', familyName: 'Amiri', familyCSS: "'Amiri', serif", url: 'https://fonts.gstatic.com/s/amiri/v26/J7acnpd8CGxBHpU.woff2', format: 'woff2' },
+  { name: 'تجوال', familyName: 'Tajawal', familyCSS: "'Tajawal', sans-serif", url: 'https://fonts.gstatic.com/s/tajawal/v11/Iura6YBj_oCad4k.woff2', format: 'woff2' },
+  { name: 'لالزار', familyName: 'Lalezar', familyCSS: "'Lalezar', cursive", url: 'https://fonts.gstatic.com/s/lalezar/v16/zrfl0HL0Cz2Vd-g.woff2', format: 'woff2' },
+];
+
 const JEDDAH_SCHOOLS = [
   "الثانوية الخامسة عشر بعد المئة", "الثانوية العشرون", "الثانوية الثانية والسبعون",
   "ثانوية مدارس الحمراء العالمية", "الثانوية التاسعة عشر", "ثانوية عمورية",
@@ -426,7 +437,6 @@ const AdminDashboardSkeleton = () => {
 const AdminDashboard = ({ 
     history,
     isLoading,
-    isFontLoading,
     onResetCounter, 
     onDownloadPdfReport,
     onDownloadExcelReport,
@@ -436,7 +446,7 @@ const AdminDashboard = ({
     return React.createElement(AdminDashboardSkeleton);
   }
   
-  const pdfButtonText = isFontLoading ? 'تهيئة الخط...' : 'تحميل PDF';
+  const pdfButtonText = 'تحميل PDF';
 
   if (history.length === 0) {
     return (
@@ -454,7 +464,6 @@ const AdminDashboard = ({
          React.createElement('div', { className: "flex justify-center gap-4 no-print mt-6" },
               React.createElement('button', { 
                   onClick: onDownloadPdfReport,
-                  disabled: isFontLoading,
                   className: "bg-purple-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-purple-500 transition-all duration-200 disabled:opacity-50" 
               }, pdfButtonText),
               React.createElement('button', { onClick: onDownloadExcelReport, className: "bg-green-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-green-500 transition-all duration-200" }, "تصدير Excel")
@@ -585,8 +594,7 @@ const AdminDashboard = ({
       React.createElement('div', { className: "flex justify-center gap-4 no-print mt-6" },
         React.createElement('button', { 
             onClick: onDownloadPdfReport,
-            disabled: isFontLoading,
-            className: "bg-purple-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-purple-500 transition-all duration-200 disabled:opacity-50" 
+            className: "bg-purple-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-purple-500 transition-all duration-200" 
         }, pdfButtonText),
         React.createElement('button', { onClick: onDownloadExcelReport, className: "bg-green-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-green-500 transition-all duration-200" }, "تصدير Excel")
       ),
@@ -662,7 +670,7 @@ const CertificatePreview = ({
                     userSelect: 'none',
                     whiteSpace: 'nowrap',
                     direction: 'rtl',
-                    fontFamily: "'Cocon Next Arabic', sans-serif",
+                    fontFamily: element.fontFamily,
                   }
                 }, textToRender)
               );
@@ -781,7 +789,7 @@ const SearchableDropdown = ({ options, value, onChange, placeholder }) => {
             className: "absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors",
             "aria-label": "مسح الاختيار"
         },
-            React.createElement('svg', { xmlns: "http://www.w.org/2000/svg", className: "h-5 w-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
+            React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-5 w-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
                 React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M6 18L18 6M6 6l12 12" })
             )
         ),
@@ -812,19 +820,20 @@ const Controls = ({
   onTemplateChange,
   onElementChange,
   onGlobalColorChange,
+  onGlobalFontChange,
   onDownloadPNG,
   onDownloadPDF,
   isLoading,
-  isFontLoading,
   isImageLoading,
 }) => {
   const nameElement = elements['name'];
   const schoolElement = elements['school'];
   const activeColor = nameElement?.color || TEXT_COLORS[0];
+  const activeFont = nameElement?.fontFamily || FONTS[0].familyCSS;
   
-  const isBusy = isLoading || isFontLoading || isImageLoading;
-  const pngButtonText = isImageLoading ? 'تحميل القالب...' : (isFontLoading ? 'تهيئة الخط...' : (isLoading ? 'جاري التحميل...' : 'تحميل PNG'));
-  const pdfButtonText = isImageLoading ? 'تحميل القالب...' : (isFontLoading ? 'تهيئة الخط...' : (isLoading ? 'جاري التحميل...' : 'تحميل PDF'));
+  const isBusy = isLoading || isImageLoading;
+  const pngButtonText = isImageLoading ? 'تحميل القالب...' : (isLoading ? 'جاري التحميل...' : 'تحميل PNG');
+  const pdfButtonText = isImageLoading ? 'تحميل القالب...' : (isLoading ? 'جاري التحميل...' : 'تحميل PDF');
 
   return (
     React.createElement('div', { className: "w-full max-w-4xl mx-auto space-y-3 relative z-10 no-print" },
@@ -842,51 +851,56 @@ const Controls = ({
         ))
       ),
       React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-2" },
-        nameElement && (
-            React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-700" },
-                React.createElement('div', { className: "relative w-full" },
-                    React.createElement('input', {
-                        type: "text",
-                        placeholder: 'الاسم',
-                        value: nameElement.text,
-                        onChange: (e) => onElementChange(nameElement.id, { text: e.target.value }),
-                        className: "w-full bg-slate-700 border border-slate-600 rounded-lg pl-8 pr-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 text-right"
-                    }),
-                    nameElement.text && React.createElement('button', {
-                        onClick: () => onElementChange(nameElement.id, { text: '' }),
-                        className: "absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors",
-                        "aria-label": "مسح الاسم"
-                    },
-                        React.createElement('svg', { xmlns: "http://www.w.org/2000/svg", className: "h-5 w-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
-                            React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M6 18L18 6M6 6l12 12" })
-                        )
+        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-700" },
+            React.createElement('div', { className: "relative w-full" },
+                React.createElement('input', {
+                    type: "text",
+                    placeholder: 'الاسم',
+                    value: nameElement.text,
+                    onChange: (e) => onElementChange(nameElement.id, { text: e.target.value }),
+                    className: "w-full bg-slate-700 border border-slate-600 rounded-lg pl-8 pr-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 text-right"
+                }),
+                nameElement.text && React.createElement('button', {
+                    onClick: () => onElementChange(nameElement.id, { text: '' }),
+                    className: "absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors",
+                    "aria-label": "مسح الاسم"
+                },
+                    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-5 w-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
+                        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M6 18L18 6M6 6l12 12" })
                     )
                 )
             )
         ),
-        schoolElement && (
-            React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-700" },
-                 React.createElement(SearchableDropdown, {
-                    options: JEDDAH_SCHOOLS,
-                    value: schoolElement.text,
-                    onChange: (newValue) => onElementChange(schoolElement.id, { text: newValue }),
-                    placeholder: 'ابحث عن المدرسة أو اختر'
-                })
-            )
+        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-700" },
+             React.createElement(SearchableDropdown, {
+                options: JEDDAH_SCHOOLS,
+                value: schoolElement.text,
+                onChange: (newValue) => onElementChange(schoolElement.id, { text: newValue }),
+                placeholder: 'ابحث عن المدرسة أو اختر'
+            })
         ),
-        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-700 flex justify-center items-center gap-3 h-full" },
-            React.createElement('span', { className: "font-semibold text-slate-300 hidden sm:inline" }, "اللون:"),
-            React.createElement('div', { className: "flex items-center gap-3" }, TEXT_COLORS.map((color) => (
-                    React.createElement('button', {
-                        key: color,
-                        onClick: () => onGlobalColorChange(color),
-                        className: `w-7 h-7 rounded-full transition-transform duration-200 transform hover:scale-110 ${
-                            activeColor === color ? 'ring-2 ring-offset-2 ring-offset-slate-800 ring-teal-400' : ''
-                        }`,
-                        style: { backgroundColor: color },
-                        "aria-label": `Select color ${color}`
-                    })
-            )))
+        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-700 flex flex-col sm:flex-row justify-around items-center gap-3 h-full" },
+          React.createElement('div', { className: "flex items-center gap-3" }, TEXT_COLORS.map((color) => (
+                  React.createElement('button', {
+                      key: color,
+                      onClick: () => onGlobalColorChange(color),
+                      className: `w-7 h-7 rounded-full transition-transform duration-200 transform hover:scale-110 ${
+                          activeColor === color ? 'ring-2 ring-offset-2 ring-offset-slate-800 ring-teal-400' : ''
+                      }`,
+                      style: { backgroundColor: color },
+                      "aria-label": `Select color ${color}`
+                  })
+          ))),
+          React.createElement('div', { className: "relative" },
+             React.createElement('select', {
+                value: activeFont,
+                onChange: (e) => onGlobalFontChange(e.target.value),
+                style: { fontFamily: activeFont },
+                className: "bg-slate-700 border border-slate-600 rounded-lg px-3 py-1 text-white focus:outline-none focus:ring-2 focus:ring-teal-400 appearance-none"
+             }, FONTS.map(font => 
+                React.createElement('option', { key: font.name, value: font.familyCSS, style: { fontFamily: font.familyCSS } }, font.name)
+             ))
+          )
         )
       ),
       React.createElement('div', { className: "grid grid-cols-2 gap-2" },
@@ -910,11 +924,11 @@ const App = () => {
   const getInitialElements = useCallback(() => ({
     name: {
       id: 'name', text: '', position: { x: 67, y: 37.5 },
-      fontSize: 19, color: TEXT_COLORS[1],
+      fontSize: 19, color: TEXT_COLORS[1], fontFamily: FONTS[0].familyCSS,
     },
     school: {
       id: 'school', text: '', position: { x: 67, y: 43 },
-      fontSize: 19, color: TEXT_COLORS[1],
+      fontSize: 19, color: TEXT_COLORS[1], fontFamily: FONTS[0].familyCSS,
     },
   }), []);
 
@@ -928,7 +942,10 @@ const App = () => {
         const savedElements = localStorage.getItem('certificateElements');
         if (savedElements) {
             const parsed = JSON.parse(savedElements);
+             // Ensure fontFamily is present, otherwise fallback to default
             if (parsed.name && parsed.school) {
+                if (!parsed.name.fontFamily) parsed.name.fontFamily = FONTS[0].familyCSS;
+                if (!parsed.school.fontFamily) parsed.school.fontFamily = FONTS[0].familyCSS;
                 return parsed;
             }
         }
@@ -937,7 +954,6 @@ const App = () => {
   });
   
   const [isLoading, setIsLoading] = useState(false);
-  const [fontDataURI, setFontDataURI] = useState(null);
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [showAdmin, setShowAdmin] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
@@ -951,6 +967,7 @@ const App = () => {
 
   const previewRef = useRef(null);
   const reportRef = useRef(null);
+  const fontCache = useRef({});
 
   useEffect(() => {
       localStorage.setItem('selectedTemplateId', selectedTemplateId);
@@ -961,28 +978,8 @@ const App = () => {
   }, [elements]);
 
   useEffect(() => {
-    const FONT_URL = 'https://firebasestorage.googleapis.com/v0/b/genai-409315.appspot.com/o/fonts%2FCoconNextArabic-Light.otf?alt=media&token=72863a35-86a0-4a25-b049-75c13e618f0a';
-    const fetchFont = async () => {
-        try {
-            const response = await fetch(FONT_URL);
-            const blob = await response.blob();
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFontDataURI(reader.result);
-            };
-            reader.readAsDataURL(blob);
-        } catch (error) {
-            console.error('Failed to fetch and encode font:', error);
-            setAlertMessage('حدث خطأ أثناء تحميل الخط. قد لا تظهر الشهادة بشكل صحيح.');
-            setShowAlertModal(true);
-        }
-    };
-    fetchFont();
-  }, []);
-
-  useEffect(() => {
     // Check if the firebaseConfig has been updated
-    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("الصق-مفتاحك-هنا")) {
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-IY")) {
       console.warn("Firebase is not configured. Please paste your firebaseConfig.");
       setIsDataLoading(false); // Stop loading to show a message or empty state
       return;
@@ -1027,11 +1024,31 @@ const App = () => {
     window.addEventListener('resize', init);
     return () => { window.removeEventListener('resize', init); cancelAnimationFrame(animationFrameId); };
   }, []);
+  
+  const getFontDataURI = async (fontFamily) => {
+    const fontInfo = FONTS.find(f => f.familyCSS === fontFamily);
+    if (!fontInfo) throw new Error('Font not found');
+
+    if (fontCache.current[fontInfo.url]) {
+        return fontCache.current[fontInfo.url];
+    }
+
+    const response = await fetch(fontInfo.url);
+    const blob = await response.blob();
+    const dataURI = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+    });
+    fontCache.current[fontInfo.url] = dataURI;
+    return dataURI;
+  };
 
   const selectedTemplate = CERTIFICATE_TEMPLATES.find(t => t.id === selectedTemplateId) || CERTIFICATE_TEMPLATES[0];
   const handleTemplateChange = (templateId) => { setIsImageLoading(true); setSelectedTemplateId(templateId); setElements(getInitialElements()); };
   const handleElementChange = (id, updates) => setElements(prev => ({ ...prev, [id]: { ...prev[id], ...updates } }));
   const handleGlobalColorChange = (color) => setElements(prev => { const newElements = {...prev}; for(const key in newElements) { newElements[key].color = color; } return newElements; });
+  const handleGlobalFontChange = (fontFamily) => setElements(prev => { const newElements = {...prev}; for(const key in newElements) { newElements[key].fontFamily = fontFamily; } return newElements; });
   
   const handleDownload = async (format) => {
     const studentNameValue = elements['name']?.text.trim();
@@ -1052,21 +1069,24 @@ const App = () => {
     try {
         const studentName = studentNameValue || 'شهادة';
         const schoolName = schoolNameValue || 'غير محدد';
+        const currentFontFamily = elements.name.fontFamily;
+        const fontInfo = FONTS.find(f => f.familyCSS === currentFontFamily);
+        const fontDataURI = await getFontDataURI(currentFontFamily);
         
-        const fontEmbedCSS = fontDataURI ? `
+        const fontEmbedCSS = `
             @font-face {
-                font-family: 'Cocon Next Arabic';
-                src: url('${fontDataURI}') format('opentype');
+                font-family: '${fontInfo.familyName}';
+                src: url('${fontDataURI}') format('${fontInfo.format}');
                 font-weight: normal;
                 font-style: normal;
             }
-        ` : '';
+        `;
 
         const dataUrl = await toPng(previewRef.current, { 
             quality: 1, 
-            pixelRatio: 2.9, // Fine-tuned ratio to fix mobile font size
+            pixelRatio: 2.9,
             backgroundColor: 'white',
-            fontEmbedCSS: fontEmbedCSS
+            fontEmbedCSS: fontEmbedCSS,
         });
         
         const filename = `شهادة صناعيو المستقبل_${studentName}`;
@@ -1078,8 +1098,7 @@ const App = () => {
             school: schoolName,
         };
         
-        // Check if Firebase is configured before trying to write
-        if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("الصق-مفتاحك-هنا")) {
+        if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-IY")) {
             database.ref('stats/downloadHistory').push(newRecord);
         } else {
              console.warn("Firebase not configured. Download logged to console only.");
@@ -1106,20 +1125,24 @@ const App = () => {
 
     const handleDownloadPdfReport = async () => {
         if (!reportRef.current) return;
+        setIsLoading(true);
         try {
-            const fontEmbedCSS = fontDataURI ? `
+            const defaultFontFamily = FONTS[0].familyCSS;
+            const fontInfo = FONTS[0];
+            const fontDataURI = await getFontDataURI(defaultFontFamily);
+            const fontEmbedCSS = `
                 @font-face {
-                    font-family: 'Cocon Next Arabic';
-                    src: url('${fontDataURI}') format('opentype');
+                    font-family: '${fontInfo.familyName}';
+                    src: url('${fontDataURI}') format('${fontInfo.format}');
                     font-weight: normal;
                     font-style: normal;
                 }
-            ` : '';
+            `;
             
             const dataUrl = await toPng(reportRef.current, { 
                 quality: 1, 
                 pixelRatio: 2,
-                backgroundColor: '#0f172a', // Match background for consistent look
+                backgroundColor: '#0f172a',
                 fontEmbedCSS: fontEmbedCSS
             });
             const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' });
@@ -1131,6 +1154,8 @@ const App = () => {
             pdf.save(`تقرير صناعيو المستقبل - ${new Date().toLocaleDateString('ar-SA')}.pdf`);
         } catch (error) {
             console.error('Error generating PDF report:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -1164,7 +1189,7 @@ const App = () => {
   const handlePasswordSubmit = (password) => { if (password === 'AdminFuture') { setIsAdminAuthenticated(true); setShowPasswordModal(false); setShowAdmin(true); } else { setAlertMessage('كلمة المرور غير صحيحة'); setShowAlertModal(true); } };
   const handleResetCounter = () => setShowResetConfirm(true);
   const executeReset = () => { 
-    if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("الصق-مفتاحك-هنا")) {
+    if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-IY")) {
         database.ref('stats').remove(); 
     } else {
         console.warn("Firebase not configured. Reset action not performed.");
@@ -1186,60 +1211,64 @@ const App = () => {
         React.createElement('header', { className: "w-full max-w-4xl mx-auto flex justify-between items-center p-4 z-10 relative no-print" },
             React.createElement('h1', { className: "text-2xl sm:text-4xl font-bold text-white tracking-widest" }, "صنـــاعيــــو المستقبـــــل"),
             React.createElement('button', { onClick: handleAdminClick, className: "text-white hover:text-teal-400 transition-colors p-2" },
-                 showAdmin ? React.createElement('svg', { xmlns: "http://www.w.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" }))
-                 : React.createElement('svg', { xmlns: "http://www.w.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572 1.066z" }), React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M15 12a3 3 0 11-6 0 3 3 0 016 0z" }))
+                 showAdmin ? React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" }))
+                 : React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, 
+                     React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.066z" }),
+                     React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M15 12a3 3 0 11-6 0 3 3 0 016 0z" })
+                 )
             )
         ),
-        React.createElement('main', { className: "w-full flex-grow flex flex-col items-center justify-center" },
+        React.createElement('main', { className: "w-full flex-grow flex flex-col items-center justify-center pt-8" },
             showAdmin ? (
-                !firebaseConfig.apiKey || firebaseConfig.apiKey.includes("الصق-مفتاحك-هنا") 
-                ? React.createElement(UnconfiguredAdminView) 
-                : React.createElement(AdminDashboard, { 
+                firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-IY") ?
+                React.createElement(AdminDashboard, { 
                     history: downloadHistory, 
                     isLoading: isDataLoading,
-                    isFontLoading: !fontDataURI,
                     onResetCounter: handleResetCounter,
                     onDownloadPdfReport: handleDownloadPdfReport,
                     onDownloadExcelReport: handleDownloadExcelReport,
                     reportRef: reportRef
-                 })
-            ) : (
-                 React.createElement(React.Fragment, null,
-                    React.createElement(Controls, {
-                        elements,
-                        selectedTemplateId,
-                        onTemplateChange: handleTemplateChange,
-                        onElementChange: handleElementChange,
-                        onGlobalColorChange: handleGlobalColorChange,
-                        onDownloadPNG: () => handleDownload('png'),
-                        onDownloadPDF: () => handleDownload('pdf'),
-                        isLoading,
-                        isFontLoading: !fontDataURI,
-                        isImageLoading,
-                    }),
-                    React.createElement('div', { className: "h-4" }),
-                    React.createElement(CertificatePreview, { 
-                        templateUrl: selectedTemplate.imageUrl, 
-                        elements, 
-                        previewRef,
-                        onImageLoad: () => setIsImageLoading(false)
-                    })
-                 )
+                }) : React.createElement(UnconfiguredAdminView)
+            ) : React.createElement(React.Fragment, null,
+                React.createElement(CertificatePreview, {
+                  templateUrl: selectedTemplate.imageUrl,
+                  elements: elements,
+                  previewRef: previewRef,
+                  onImageLoad: () => setIsImageLoading(false)
+                }),
+                React.createElement('div', { className: 'h-4' }),
+                React.createElement(Controls, {
+                  elements: elements,
+                  selectedTemplateId: selectedTemplateId,
+                  onTemplateChange: handleTemplateChange,
+                  onElementChange: handleElementChange,
+                  onGlobalColorChange: handleGlobalColorChange,
+                  onGlobalFontChange: handleGlobalFontChange,
+                  onDownloadPNG: () => handleDownload('png'),
+                  onDownloadPDF: () => handleDownload('pdf'),
+                  isLoading: isLoading,
+                  isImageLoading: isImageLoading,
+                })
             )
-        ),
-        showPasswordModal && React.createElement(PasswordModal, { onSubmit: handlePasswordSubmit, onClose: () => setShowPasswordModal(false) }),
-        showResetConfirm && React.createElement(ConfirmationModal, { 
-            title: "تأكيد إعادة التعيين", 
-            message: "هل أنت متأكد من رغبتك في حذف جميع بيانات التحميل بشكل نهائي؟ لا يمكن التراجع عن هذا الإجراء.", 
-            onConfirm: executeReset, 
-            onClose: () => setShowResetConfirm(false) 
-        }),
-        showAlertModal && React.createElement(AlertModal, { message: alertMessage, onClose: () => setShowAlertModal(false) })
-      )
+        )
+      ),
+      showPasswordModal && React.createElement(PasswordModal, {
+        onSubmit: handlePasswordSubmit,
+        onClose: () => setShowPasswordModal(false)
+      }),
+      showResetConfirm && React.createElement(ConfirmationModal, {
+        title: "تأكيد إعادة التعيين",
+        message: "هل أنت متأكد من رغبتك في حذف جميع الإحصائيات وسجلات التحميل؟ لا يمكن التراجع عن هذا الإجراء.",
+        onConfirm: executeReset,
+        onClose: () => setShowResetConfirm(false)
+      }),
+      showAlertModal && React.createElement(AlertModal, {
+        message: alertMessage,
+        onClose: () => setShowAlertModal(false)
+      })
     )
   );
 };
-
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(App));
