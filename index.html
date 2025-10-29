@@ -235,7 +235,7 @@ const AlertModal = ({ message, onClose }) => {
                 onClick: (e) => e.stopPropagation(),
                 role: "document"
             },
-                React.createElement('p', { id: "alert-message", className: "text-slate-200 text-lg mb-8 leading-relaxed" }, message),
+                React.createElement('div', { id: "alert-message", className: "text-slate-200 text-lg mb-8 leading-relaxed" }, message),
                 React.createElement('button', {
                     ref: closeButtonRef,
                     onClick: onClose,
@@ -809,9 +809,13 @@ const App = () => {
     const schoolNameValue = elements['school']?.text.trim();
 
     if (!studentNameValue || !schoolNameValue) {
-      setAlertMessage("الشهادة جاهزة تقريباً! لمسة أخيرة بسيطة: يرجى إضافة اسم صاحب الإنجاز والمدرسة التي يمثلها لتكتمل فرحة التكريم.");
-      setShowAlertModal(true);
-      return;
+        const formattedMessage = React.createElement(React.Fragment, null, 
+            React.createElement('span', { className: "block text-xl font-bold text-white mb-4" }, "الشهادة جاهزة تقريباً!"),
+            React.createElement('span', { className: "block" }, "لمسة أخيرة بسيطة: يرجى إضافة اسم صاحب الإنجاز والمدرسة التي يمثلها لتكتمل فرحة التكريم.")
+        );
+        setAlertMessage(formattedMessage);
+        setShowAlertModal(true);
+        return;
     }
       
     if (!previewRef.current) return;
