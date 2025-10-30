@@ -645,8 +645,8 @@ const CertificatePreview = ({
             }),
             Object.keys(elements).map((key) => {
               const element = elements[key];
-              const MAX_FONT_SIZE = 17;
-              const MIN_FONT_SIZE = 11.2;
+              const MAX_FONT_SIZE = 18;
+              const MIN_FONT_SIZE = 12;
               const MAX_WIDTH = 896;
               const MIN_WIDTH = 375;
               const clampedWidth = Math.max(MIN_WIDTH, Math.min(containerWidth, MAX_WIDTH));
@@ -981,7 +981,7 @@ const App = () => {
 
   useEffect(() => {
     // Check if the firebaseConfig has been updated
-    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-IY")) {
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-REPLACED")) {
       console.warn("Firebase is not configured. Please paste your firebaseConfig.");
       setIsDataLoading(false); // Stop loading to show a message or empty state
       return;
@@ -1100,7 +1100,7 @@ const App = () => {
             school: schoolName,
         };
         
-        if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-IY")) {
+        if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-REPLACED")) {
             database.ref('stats/downloadHistory').push(newRecord);
         } else {
              console.warn("Firebase not configured. Download logged to console only.");
@@ -1191,7 +1191,7 @@ const App = () => {
   const handlePasswordSubmit = (password) => { if (password === 'AdminFuture') { setIsAdminAuthenticated(true); setShowPasswordModal(false); setShowAdmin(true); } else { setAlertMessage('كلمة المرور غير صحيحة'); setShowAlertModal(true); } };
   const handleResetCounter = () => setShowResetConfirm(true);
   const executeReset = () => { 
-    if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-IY")) {
+    if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-REPLACED")) {
         database.ref('stats').remove(); 
     } else {
         console.warn("Firebase not configured. Reset action not performed.");
@@ -1222,7 +1222,7 @@ const App = () => {
         ),
         React.createElement('main', { className: "w-full flex-grow flex flex-col items-center justify-start" },
             showAdmin ? (
-                firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-IY") ?
+                firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-REPLACED") ?
                 React.createElement(AdminDashboard, { 
                     history: downloadHistory, 
                     isLoading: isDataLoading,
