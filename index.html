@@ -148,7 +148,7 @@ import { toPng } from 'html-to-image';
 
 // --- Firebase Setup ---
 const firebaseConfig = {
-  apiKey: "AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-REPLACED",
+  apiKey: "AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-ps",
   authDomain: "future-industrialists.firebaseapp.com",
   databaseURL: "https://future-industrialists-default-rtdb.firebaseio.com",
   projectId: "future-industrialists",
@@ -1089,6 +1089,7 @@ const App = () => {
             pixelRatio: 2.9,
             backgroundColor: 'white',
             fontEmbedCSS: fontEmbedCSS,
+            cacheBust: true,
         });
         
         const filename = `شهادة صناعيو المستقبل_${studentName}`;
