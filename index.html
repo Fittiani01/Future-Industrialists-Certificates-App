@@ -148,7 +148,7 @@ import { toPng } from 'html-to-image';
 
 // --- Firebase Setup ---
 const firebaseConfig = {
-  apiKey: "AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-ps",
+  apiKey: "AIzaSyBh61RdyPcpP03Kp7YEYcQhGLP7JhBw-IY",
   authDomain: "future-industrialists.firebaseapp.com",
   databaseURL: "https://future-industrialists-default-rtdb.firebaseio.com",
   projectId: "future-industrialists",
@@ -158,6 +158,7 @@ const firebaseConfig = {
   measurementId: "G-T76W2FKP9L"
 };
 
+
 // Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
@@ -166,20 +167,15 @@ const database = firebase.database();
 
 
 // --- Constants ---
-const TEMPLATE_IDS = [
-  '1RHNRp9JspPoiHzPTENOxDVmwnsEtykbA', // طالب
-  '1V8LaKb4JMP2xQcG5DmylkvSh0-pBTnmP', // طالبة
-  '1XvG1ux-6-i9ssk69i4Dywg5a9mOrSVI3', // مشرف
-  '1Uwe5Ww_Cg6BGAqv2sYvgAJk89YXV9HCN', // مشرفة
-  '1aroOUan94EHZRGU2ZwqWa9enD6IjfTSA', // مدير
-  '1NYHLAxw8zGeA8wU_Fxt6Xt0KZwSI0p4Q', // مديرة
+const CERTIFICATE_TEMPLATES = [
+    { id: 'طالب', label: 'طالب', imageUrl: 'https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/talib.png?alt=media&token=ffefd3ef-a63f-495f-b831-65a9c4226395' },
+    { id: 'طالبة', label: 'طالبة', imageUrl: 'https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/taliba.png?alt=media&token=3d56776f-e6f4-47f0-b038-b7d2410cf3e4' },
+    { id: 'مشرف', label: 'مشرف', imageUrl: 'https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/mushrif.png?alt=media&token=c1ea28ee-6de4-42ef-b522-89b248809700' },
+    { id: 'مشرفة', label: 'مشرفة', imageUrl: 'https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/mushrifa.png?alt=media&token=890c98c2-e3ec-4c6c-8072-f1a6f5c0def6' },
+    { id: 'مدير', label: 'مدير', imageUrl: 'https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/mudeer.png?alt=media&token=038d17c4-2eed-4edd-894c-eae903098f78' },
+    { id: 'مديرة', label: 'مديرة', imageUrl: 'https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/mudeera.png?alt=media&token=54fdfbd8-e491-4d32-b4a2-b854b092ebb0' }
 ];
-const LABELS = ['طالب', 'طالبة', 'مشرف', 'مشرفة', 'مدير', 'مديرة'];
-const CERTIFICATE_TEMPLATES = TEMPLATE_IDS.map((id, index) => ({
-  id: LABELS[index],
-  label: LABELS[index],
-  imageUrl: `https://lh3.googleusercontent.com/d/${id}=w1200`
-}));
+
 const TEXT_COLORS = ['#37346d', '#00a49a', '#4682B4', '#606060'];
 const FONTS = [
   { name: 'الخط الأساسي', familyName: 'Cocon Next Arabic', familyCSS: "'Cocon Next Arabic', sans-serif", url: 'https://firebasestorage.googleapis.com/v0/b/genai-409315.appspot.com/o/fonts%2FCoconNextArabic-Light.otf?alt=media&token=72863a35-86a0-4a25-b049-75c13e618f0a', format: 'opentype' },
@@ -923,37 +919,37 @@ const Controls = ({
 
 // --- App Component ---
 const App = () => {
-  const getInitialElements = useCallback(() => ({
-    name: {
-      id: 'name', text: '', position: { x: 67, y: 37.5 },
-      fontSize: 19, color: TEXT_COLORS[1], fontFamily: FONTS[0].familyCSS,
-    },
-    school: {
-      id: 'school', text: '', position: { x: 67, y: 43 },
-      fontSize: 19, color: TEXT_COLORS[1], fontFamily: FONTS[0].familyCSS,
-    },
-  }), []);
-
+  const getSanitizedInitialState = useCallback(() => {
+    const defaultState = {
+        name: { id: 'name', text: '', position: { x: 67, y: 37.5 }, fontSize: 19, color: TEXT_COLORS[1], fontFamily: FONTS[0].familyCSS },
+        school: { id: 'school', text: '', position: { x: 67, y: 43 }, fontSize: 19, color: TEXT_COLORS[1], fontFamily: FONTS[0].familyCSS },
+    };
+    try {
+        const savedElements = localStorage.getItem('certificateElements');
+        if (savedElements) {
+            const parsed = JSON.parse(savedElements);
+            // Aggressively sanitize the loaded state
+            const sanitizedState = { ...defaultState };
+            if (parsed && typeof parsed === 'object') {
+                if (parsed.name && typeof parsed.name === 'object') {
+                    sanitizedState.name = { ...defaultState.name, ...parsed.name, position: { ...defaultState.name.position, ...parsed.name.position }};
+                }
+                if (parsed.school && typeof parsed.school === 'object') {
+                    sanitizedState.school = { ...defaultState.school, ...parsed.school, position: { ...defaultState.school.position, ...parsed.school.position }};
+                }
+            }
+            return sanitizedState;
+        }
+    } catch (e) { console.error("Could not parse certificate elements from localStorage", e); }
+    return defaultState;
+  }, []);
+  
   const [selectedTemplateId, setSelectedTemplateId] = useState(() => {
     const savedTemplateId = localStorage.getItem('selectedTemplateId');
     return savedTemplateId || CERTIFICATE_TEMPLATES[0].id;
   });
 
-  const [elements, setElements] = useState(() => {
-    try {
-        const savedElements = localStorage.getItem('certificateElements');
-        if (savedElements) {
-            const parsed = JSON.parse(savedElements);
-             // Ensure fontFamily is present, otherwise fallback to default
-            if (parsed.name && parsed.school) {
-                if (!parsed.name.fontFamily) parsed.name.fontFamily = FONTS[0].familyCSS;
-                if (!parsed.school.fontFamily) parsed.school.fontFamily = FONTS[0].familyCSS;
-                return parsed;
-            }
-        }
-    } catch (e) { console.error("Could not parse certificate elements from localStorage", e); }
-    return getInitialElements();
-  });
+  const [elements, setElements] = useState(getSanitizedInitialState);
   
   const [isLoading, setIsLoading] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(true);
@@ -975,18 +971,38 @@ const App = () => {
       localStorage.setItem('selectedTemplateId', selectedTemplateId);
   }, [selectedTemplateId]);
 
+  const sanitizeAndSaveElements = useCallback((elementsToSave) => {
+    try {
+        const sanitized = {};
+        const defaultState = getSanitizedInitialState();
+        for (const key in elementsToSave) {
+            if (Object.hasOwnProperty.call(elementsToSave, key) && (key === 'name' || key === 'school')) {
+                const el = elementsToSave[key];
+                const defaultEl = defaultState[key];
+                sanitized[key] = {
+                    id: String(el.id || defaultEl.id),
+                    text: String(el.text || ''),
+                    position: {
+                        x: Number(el.position?.x ?? defaultEl.position.x),
+                        y: Number(el.position?.y ?? defaultEl.position.y),
+                    },
+                    fontSize: Number(el.fontSize || defaultEl.fontSize),
+                    color: String(el.color || defaultEl.color),
+                    fontFamily: String(el.fontFamily || defaultEl.fontFamily),
+                };
+            }
+        }
+        localStorage.setItem('certificateElements', JSON.stringify(sanitized));
+    } catch (e) {
+        console.error("Failed to sanitize and save elements:", e);
+    }
+  }, [getSanitizedInitialState]);
+  
   useEffect(() => {
-      localStorage.setItem('certificateElements', JSON.stringify(elements));
-  }, [elements]);
+      sanitizeAndSaveElements(elements);
+  }, [elements, sanitizeAndSaveElements]);
 
   useEffect(() => {
-    // Check if the firebaseConfig has been updated
-    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-REPLACED")) {
-      console.warn("Firebase is not configured. Please paste your firebaseConfig.");
-      setIsDataLoading(false); // Stop loading to show a message or empty state
-      return;
-    }
-    
     const statsRef = database.ref('stats/downloadHistory');
     const listener = statsRef.orderByChild('timestamp').on('value', (snapshot) => {
         const historyData = snapshot.val();
@@ -1047,7 +1063,7 @@ const App = () => {
   };
 
   const selectedTemplate = CERTIFICATE_TEMPLATES.find(t => t.id === selectedTemplateId) || CERTIFICATE_TEMPLATES[0];
-  const handleTemplateChange = (templateId) => { setIsImageLoading(true); setSelectedTemplateId(templateId); setElements(getInitialElements()); };
+  const handleTemplateChange = (templateId) => { setIsImageLoading(true); setSelectedTemplateId(templateId); setElements(getSanitizedInitialState()); };
   const handleElementChange = (id, updates) => setElements(prev => ({ ...prev, [id]: { ...prev[id], ...updates } }));
   const handleGlobalColorChange = (color) => setElements(prev => { const newElements = {...prev}; for(const key in newElements) { newElements[key].color = color; } return newElements; });
   const handleGlobalFontChange = (fontFamily) => setElements(prev => { const newElements = {...prev}; for(const key in newElements) { newElements[key].fontFamily = fontFamily; } return newElements; });
@@ -1084,12 +1100,20 @@ const App = () => {
             }
         `;
 
-        const dataUrl = await toPng(previewRef.current, { 
-            quality: 1, 
-            pixelRatio: 2.9,
+        const node = previewRef.current;
+        
+        // Define a fixed, high-quality resolution for download to prevent memory issues on mobile devices.
+        const DOWNLOAD_WIDTH = 2400;
+        const DOWNLOAD_HEIGHT = DOWNLOAD_WIDTH / 1.414; // Maintain A-series paper aspect ratio
+
+        const dataUrl = await toPng(node, {
+            quality: 1,
+            pixelRatio: 1, // Set to 1 as we are controlling dimensions manually
             backgroundColor: 'white',
             fontEmbedCSS: fontEmbedCSS,
             cacheBust: true,
+            width: DOWNLOAD_WIDTH,
+            height: Math.round(DOWNLOAD_HEIGHT),
         });
         
         const filename = `شهادة صناعيو المستقبل_${studentName}`;
@@ -1101,12 +1125,7 @@ const App = () => {
             school: schoolName,
         };
         
-        if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-REPLACED")) {
-            database.ref('stats/downloadHistory').push(newRecord);
-        } else {
-             console.warn("Firebase not configured. Download logged to console only.");
-             console.log(newRecord);
-        }
+        database.ref('stats/downloadHistory').push(newRecord);
 
 
         if (format === 'png') {
@@ -1142,11 +1161,14 @@ const App = () => {
                 }
             `;
             
-            const dataUrl = await toPng(reportRef.current, { 
+            const node = reportRef.current;
+            const dataUrl = await toPng(node, { 
                 quality: 1, 
                 pixelRatio: 2,
                 backgroundColor: '#0f172a',
-                fontEmbedCSS: fontEmbedCSS
+                fontEmbedCSS: fontEmbedCSS,
+                width: node.scrollWidth,
+                height: node.scrollHeight
             });
             const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' });
             const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -1192,11 +1214,7 @@ const App = () => {
   const handlePasswordSubmit = (password) => { if (password === 'AdminFuture') { setIsAdminAuthenticated(true); setShowPasswordModal(false); setShowAdmin(true); } else { setAlertMessage('كلمة المرور غير صحيحة'); setShowAlertModal(true); } };
   const handleResetCounter = () => setShowResetConfirm(true);
   const executeReset = () => { 
-    if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-REPLACED")) {
-        database.ref('stats').remove(); 
-    } else {
-        console.warn("Firebase not configured. Reset action not performed.");
-    }
+    database.ref('stats').remove(); 
   };
 
   const UnconfiguredAdminView = () => (
@@ -1207,6 +1225,8 @@ const App = () => {
       )
     )
   );
+  
+  const isFirebaseConfigured = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-ps");
 
   return (
     React.createElement(React.Fragment, null,
@@ -1223,7 +1243,7 @@ const App = () => {
         ),
         React.createElement('main', { className: "w-full flex-grow flex flex-col items-center justify-start" },
             showAdmin ? (
-                firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-REPLACED") ?
+                isFirebaseConfigured ?
                 React.createElement(AdminDashboard, { 
                     history: downloadHistory, 
                     isLoading: isDataLoading,
