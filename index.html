@@ -915,8 +915,8 @@ const Controls = ({
 const App = () => {
   const getSanitizedInitialState = useCallback(() => {
     const defaultState = {
-        name: { id: 'name', text: '', position: { x: 67, y: 37.5 }, fontSize: 19, color: TEXT_COLORS[1], fontFamily: FONTS[2].familyCSS, fontWeight: 'normal' },
-        school: { id: 'school', text: '', position: { x: 67, y: 43 }, fontSize: 19, color: TEXT_COLORS[1], fontFamily: FONTS[2].familyCSS, fontWeight: 'normal' },
+        name: { id: 'name', text: '', position: { x: 67, y: 37.5 }, fontSize: 17, color: TEXT_COLORS[1], fontFamily: FONTS[2].familyCSS, fontWeight: 'normal' },
+        school: { id: 'school', text: '', position: { x: 67, y: 43 }, fontSize: 17, color: TEXT_COLORS[1], fontFamily: FONTS[2].familyCSS, fontWeight: 'normal' },
     };
     try {
         const savedElements = localStorage.getItem('certificateElements');
@@ -1065,7 +1065,7 @@ const App = () => {
     setElements(prev => {
         const newElements = {...prev};
         const step = 0.5;
-        const minSize = 12;
+        const minSize = 10;
         const maxSize = 28;
         for (const key in newElements) {
             let newSize = newElements[key].fontSize;
@@ -1158,8 +1158,16 @@ const App = () => {
         // 4. Add the image, stretching it to fill the entire A4 page
         pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
         
-        // 5. Save the final PDF
-        pdf.save(`${filename}.pdf`);
+        // 5. Save the final PDF using a mobile-friendly method
+        const pdfBlob = pdf.output('blob');
+        const blobUrl = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `${filename}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
 
     } catch (error) { console.error('Download error:', error); } finally { setIsLoading(false); }
   };
