@@ -897,7 +897,7 @@ const Controls = ({
             })
         ),
         React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-700 flex flex-row justify-around items-center gap-3 h-full" },
-          React.createElement('div', { className: "flex items-center gap-3" }, TEXT_COLORS.map((color) => (
+          React.createElement('div', { className: "flex items-center gap-3 flex-row" }, TEXT_COLORS.map((color) => (
                   React.createElement('button', {
                       key: color,
                       onClick: () => onGlobalColorChange(color),
@@ -1099,6 +1099,7 @@ const App = () => {
     if (!previewRef.current) return;
     setIsLoading(true);
     try {
+        const node = previewRef.current;
         const studentName = studentNameValue || 'شهادة';
         const schoolName = schoolNameValue || 'غير محدد';
         const currentFontFamily = elements.name.fontFamily;
@@ -1114,19 +1115,13 @@ const App = () => {
             }
         `;
 
-        const node = previewRef.current;
-        
-        const DOWNLOAD_WIDTH = 2000;
-        const DOWNLOAD_HEIGHT = DOWNLOAD_WIDTH / 1.414;
-
+        // 1. Generate a high-resolution image for printing
         const dataUrl = await toPng(node, {
             quality: 1,
-            pixelRatio: 1,
+            pixelRatio: 3, // Use a higher pixel ratio for print-quality (approx. 300 DPI)
             backgroundColor: 'white',
             fontEmbedCSS: fontEmbedCSS,
             cacheBust: true,
-            width: DOWNLOAD_WIDTH,
-            height: Math.round(DOWNLOAD_HEIGHT),
         });
         
         const filename = `شهادة صناعيو المستقبل_${studentName}`;
@@ -1140,15 +1135,21 @@ const App = () => {
         
         database.ref('stats/downloadHistory').push(newRecord);
 
-        // Create a standard A4 landscape PDF ready for printing.
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        // 2. Create a standard A4 PDF document in landscape mode
+        const pdf = new jsPDF({
+            orientation: 'landscape',
+            unit: 'mm',
+            format: 'a4'
+        });
         
-        const pdfWidth = pdf.internal.pageSize.getWidth(); // A4 landscape width in mm (297)
-        const pdfHeight = pdf.internal.pageSize.getHeight(); // A4 landscape height in mm (210)
+        // 3. Get the page dimensions in millimeters
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
         
-        // Add the generated image, stretching it to fill the entire A4 page.
+        // 4. Add the image, stretching it to fill the entire A4 page
         pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
         
+        // 5. Save the final PDF
         pdf.save(`${filename}.pdf`);
 
     } catch (error) { console.error('Download error:', error); } finally { setIsLoading(false); }
