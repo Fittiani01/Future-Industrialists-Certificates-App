@@ -3,14 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>شهادات صناعيو المستقبل</title>
+    <title>صناعيو المستقبل</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
     <!-- Preload the primary custom font for faster rendering -->
     <link rel="preload" href="https://fonts.gstatic.com/s/tajawal/v11/Iura6YBj_oCad4k.woff2" as="font" type="font/woff2" crossorigin="anonymous">
 
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200..1000&family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <style>
+      /* Amiri */
+      @font-face {
+        font-family: 'Amiri';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/amiri/v26/J7acnpd8CGxBHpU.woff2) format('woff2');
+      }
+      /* Cairo */
+      @font-face {
+        font-family: 'Cairo';
+        font-style: normal;
+        font-weight: 200 1000;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/cairo/v28/SLXgc-MA-13aa-scHrU.woff2) format('woff2');
+      }
+      /* Tajawal */
+      @font-face {
+        font-family: 'Tajawal';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/tajawal/v11/Iura6YBj_oCad4k.woff2) format('woff2');
+      }
+    </style>
     <script type="importmap">
 {
   "imports": {
@@ -28,30 +53,6 @@
     <!-- Add SDKs for Firebase products that you want to use -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-      @font-face {
-        font-family: 'Cocon Next Arabic';
-        src: url('https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2Fcocon-next-arabic-webfont.woff2?alt=media&token=3edeadfd-37a3-4207-99ba-820271494c67') format('woff2'),
-             url('https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2Fcocon-next-arabic-webfont.woff?alt=media&token=0f93bad4-b839-419b-8bf7-d506797e75c6') format('woff');
-        font-weight: normal;
-        font-style: normal;
-        font-display: swap; /* Improves user experience by showing text with a fallback font while the custom font loads */
-      }
-       @font-face {
-        font-family: 'Cocon Next Arabic Regular';
-        src: url('https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2Fcocon__next_arabic-regular-webfont.woff2?alt=media&token=72ef9b92-97af-4323-8030-03d8816cd869') format('woff2'),
-            url('https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2Fcocon__next_arabic-regular-webfont.woff?alt=media&token=7d216c78-c11a-42fe-9d57-1714fca32874') format('woff');
-        font-weight: normal;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: 'Nizar Cocon Kurdish Bold';
-        src: url('https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2Fnizarcoconkurdish-bold-webfont.woff2?alt=media&token=ad235356-2f5a-4abc-b3d7-b9a7a8c4d9cc') format('woff2'),
-            url('https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2Fnizarcoconkurdish-bold-webfont.woff?alt=media&token=057ed644-ad8b-4fa6-9d8a-a78f72901812') format('woff');
-        font-weight: bold;
-        font-style: normal;
-        font-display: swap;
-      }
       body {
         font-family: 'Tajawal', sans-serif;
       }
@@ -831,7 +832,7 @@ const Controls = ({
   const isBold = nameElement?.fontWeight === 'bold';
   
   const isBusy = isLoading || isImageLoading;
-  const pdfButtonText = isImageLoading ? 'تحميل القالب...' : (isLoading ? 'جاري التحميل...' : 'تحميل الشهادة PDF');
+  const pdfButtonText = isImageLoading ? 'تحميل القالب...' : (isLoading ? 'جاري التحميل...' : 'تحميل الشهادة');
 
   return (
     React.createElement('div', { className: "w-full max-w-4xl mx-auto space-y-4 relative z-10 no-print" },
@@ -1065,7 +1066,7 @@ const App = () => {
     setElements(prev => {
         const newElements = {...prev};
         const step = 0.5;
-        const minSize = 8;
+        const minSize = 4;
         const maxSize = 28;
         for (const key in newElements) {
             let newSize = newElements[key].fontSize;
@@ -1127,7 +1128,7 @@ const App = () => {
         // 1. Generate a high-resolution image for printing
         const dataUrl = await toPng(node, {
             quality: 1,
-            pixelRatio: 2, // Reduced for better mobile compatibility & performance
+            pixelRatio: 3, // Increased for high-quality printing
             backgroundColor: 'white',
             fontEmbedCSS: fontEmbedCSS,
             cacheBust: true,
@@ -1158,15 +1159,10 @@ const App = () => {
         // 4. Add the image, stretching it to fill the entire A4 page
         pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
         
-        // 5. Save the final PDF using a mobile-friendly method
+        // 5. Save the final PDF using a universally compatible method
         const pdfBlob = pdf.output('blob');
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(pdfBlob);
-        link.download = `${filename}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
+        const url = URL.createObjectURL(pdfBlob);
+        window.open(url); // Opens in a new tab, works on all devices
 
     } catch (error) { console.error('Download error:', error); } finally { setIsLoading(false); }
   };
@@ -1242,6 +1238,13 @@ const App = () => {
   const executeReset = () => { 
     database.ref('stats').remove(); 
   };
+  
+  const handleTextDrag = (id, e, ui) => {
+    const previewRect = previewRef.current.getBoundingClientRect();
+    const newX = ((ui.x + ui.node.offsetWidth) / previewRect.width) * 100;
+    const newY = ((ui.y + ui.node.offsetHeight / 2) / previewRect.height) * 100;
+    handleElementChange(id, { position: { x: newX, y: newY } });
+  };
 
   const UnconfiguredAdminView = () => (
     React.createElement('div', { className: "w-full max-w-4xl mx-auto p-4 space-y-6 text-center" },
@@ -1256,9 +1259,9 @@ const App = () => {
 
   return (
     React.createElement(React.Fragment, null,
-      React.createElement('div', { className: `min-h-screen text-white flex flex-col items-center p-4 w-full` },
+      React.createElement('div', { className: `min-h-screen text-white flex flex-col items-center justify-center p-4 w-full` },
         React.createElement('header', { className: "w-full max-w-4xl mx-auto flex justify-between items-center p-4 z-10 relative no-print" },
-            React.createElement('h1', { className: "text-2xl sm:text-4xl font-bold text-white tracking-widest", style: { fontFamily: "'Tajawal', sans-serif" } }, "صنـــاعيــــو المستقبـــــل"),
+            React.createElement('h1', { className: "text-2xl sm:text-4xl font-bold text-white tracking-widest", style: { fontFamily: "'Tajawal', sans-serif" } }, "صناعيو المستقبل"),
             React.createElement('button', { onClick: handleAdminClick, className: "text-white hover:text-emerald-400 transition-colors p-2" },
                  showAdmin ? React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" }))
                  : React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill:"none", viewBox:"0 0 24 24", strokeWidth:1.5, stroke:"currentColor" },
@@ -1267,7 +1270,7 @@ const App = () => {
                  )
             )
         ),
-        React.createElement('main', { className: "w-full flex-grow flex flex-col items-center justify-start" },
+        React.createElement('main', { className: "w-full flex-grow flex flex-col items-center" },
             showAdmin ? (
                 isFirebaseConfigured ?
                 React.createElement(AdminDashboard, { 
