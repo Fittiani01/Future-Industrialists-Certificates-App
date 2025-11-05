@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
     <!-- Preload the primary custom font for faster rendering -->
-    <link rel="preload" href="https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2Fcocon-next-arabic-webfont.woff2?alt=media&token=3edeadfd-37a3-4207-99ba-820271494c67" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="https://fonts.gstatic.com/s/tajawal/v11/Iura6YBj_oCad4k.woff2" as="font" type="font/woff2" crossorigin="anonymous">
 
     <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200..1000&family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
     <script type="importmap">
@@ -36,8 +36,24 @@
         font-style: normal;
         font-display: swap; /* Improves user experience by showing text with a fallback font while the custom font loads */
       }
+       @font-face {
+        font-family: 'Cocon Next Arabic Regular';
+        src: url('https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2Fcocon__next_arabic-regular-webfont.woff2?alt=media&token=72ef9b92-97af-4323-8030-03d8816cd869') format('woff2'),
+            url('https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2Fcocon__next_arabic-regular-webfont.woff?alt=media&token=7d216c78-c11a-42fe-9d57-1714fca32874') format('woff');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Nizar Cocon Kurdish Bold';
+        src: url('https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2Fnizarcoconkurdish-bold-webfont.woff2?alt=media&token=ad235356-2f5a-4abc-b3d7-b9a7a8c4d9cc') format('woff2'),
+            url('https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2Fnizarcoconkurdish-bold-webfont.woff?alt=media&token=057ed644-ad8b-4fa6-9d8a-a78f72901812') format('woff');
+        font-weight: bold;
+        font-style: normal;
+        font-display: swap;
+      }
       body {
-        font-family: 'Cocon Next Arabic', sans-serif;
+        font-family: 'Tajawal', sans-serif;
       }
       #root {
         position: relative;
@@ -184,7 +200,6 @@ const CERTIFICATE_TEMPLATES = [
 
 const TEXT_COLORS = ['#37346d', '#00a49a', '#4682B4', '#606060'];
 const FONTS = [
-  { name: 'الخط الأساسي', familyName: 'Cocon Next Arabic', familyCSS: "'Cocon Next Arabic', sans-serif", url: 'https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2Fcocon-next-arabic-webfont.woff2?alt=media&token=3edeadfd-37a3-4207-99ba-820271494c67', format: 'woff2' },
   { name: 'كايرو', familyName: 'Cairo', familyCSS: "'Cairo', sans-serif", url: 'https://fonts.gstatic.com/s/cairo/v28/SLXgc-MA-13aa-scHrU.woff2', format: 'woff2' },
   { name: 'أميري', familyName: 'Amiri', familyCSS: "'Amiri', serif", url: 'https://fonts.gstatic.com/s/amiri/v26/J7acnpd8CGxBHpU.woff2', format: 'woff2' },
   { name: 'تجوال', familyName: 'Tajawal', familyCSS: "'Tajawal', sans-serif", url: 'https://fonts.gstatic.com/s/tajawal/v11/Iura6YBj_oCad4k.woff2', format: 'woff2' },
@@ -647,8 +662,8 @@ const CertificatePreview = ({
             }),
             Object.keys(elements).map((key) => {
               const element = elements[key];
-              const MAX_FONT_SIZE = 18;
-              const MIN_FONT_SIZE = 12;
+              const MAX_FONT_SIZE = 16;
+              const MIN_FONT_SIZE = 10;
               const MAX_WIDTH = 896;
               const MIN_WIDTH = 375;
               const clampedWidth = Math.max(MIN_WIDTH, Math.min(containerWidth, MAX_WIDTH));
@@ -825,7 +840,6 @@ const Controls = ({
   onElementChange,
   onGlobalColorChange,
   onGlobalFontChange,
-  onDownloadPNG,
   onDownloadPDF,
   isLoading,
   isImageLoading,
@@ -836,11 +850,10 @@ const Controls = ({
   const activeFont = nameElement?.fontFamily || FONTS[0].familyCSS;
   
   const isBusy = isLoading || isImageLoading;
-  const pngButtonText = isImageLoading ? 'تحميل القالب...' : (isLoading ? 'جاري التحميل...' : 'تحميل PNG');
-  const pdfButtonText = isImageLoading ? 'تحميل القالب...' : (isLoading ? 'جاري التحميل...' : 'تحميل PDF');
+  const pdfButtonText = isImageLoading ? 'تحميل القالب...' : (isLoading ? 'جاري التحميل...' : 'تحميل الشهادة PDF');
 
   return (
-    React.createElement('div', { className: "w-full max-w-4xl mx-auto space-y-3 relative z-10 no-print" },
+    React.createElement('div', { className: "w-full max-w-4xl mx-auto space-y-4 relative z-10 no-print" },
       React.createElement('div', { className: "grid grid-cols-3 sm:grid-cols-6 gap-2" },
         CERTIFICATE_TEMPLATES.map((template) => (
           React.createElement('button', {
@@ -883,7 +896,7 @@ const Controls = ({
                 placeholder: 'ابحث عن المدرسة أو اختر'
             })
         ),
-        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-700 flex flex-col sm:flex-row justify-around items-center gap-3 h-full" },
+        React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-slate-700 flex flex-row justify-around items-center gap-3 h-full" },
           React.createElement('div', { className: "flex items-center gap-3" }, TEXT_COLORS.map((color) => (
                   React.createElement('button', {
                       key: color,
@@ -907,16 +920,11 @@ const Controls = ({
           )
         )
       ),
-      React.createElement('div', { className: "grid grid-cols-2 gap-2" },
-        React.createElement('button', {
-          onClick: onDownloadPNG,
-          disabled: isBusy,
-          className: "w-full bg-teal-500 text-slate-900 font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-teal-400 transition-all duration-200 disabled:opacity-50"
-        }, pngButtonText),
+       React.createElement('div', { className: "w-full" },
         React.createElement('button', {
           onClick: onDownloadPDF,
           disabled: isBusy,
-          className: "w-full bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-purple-500 transition-all duration-200 disabled:opacity-50"
+          className: "w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-purple-500 transition-all duration-200 disabled:opacity-50"
         }, pdfButtonText)
       )
     )
@@ -927,8 +935,8 @@ const Controls = ({
 const App = () => {
   const getSanitizedInitialState = useCallback(() => {
     const defaultState = {
-        name: { id: 'name', text: '', position: { x: 67, y: 37.5 }, fontSize: 19, color: TEXT_COLORS[1], fontFamily: FONTS[0].familyCSS },
-        school: { id: 'school', text: '', position: { x: 67, y: 43 }, fontSize: 19, color: TEXT_COLORS[1], fontFamily: FONTS[0].familyCSS },
+        name: { id: 'name', text: '', position: { x: 67, y: 37.5 }, fontSize: 19, color: TEXT_COLORS[1], fontFamily: FONTS[2].familyCSS },
+        school: { id: 'school', text: '', position: { x: 67, y: 43 }, fontSize: 19, color: TEXT_COLORS[1], fontFamily: FONTS[2].familyCSS },
     };
     try {
         const savedElements = localStorage.getItem('certificateElements');
@@ -1108,13 +1116,12 @@ const App = () => {
 
         const node = previewRef.current;
         
-        // Define a fixed, high-quality resolution for download to prevent memory issues on mobile devices.
-        const DOWNLOAD_WIDTH = 2400;
-        const DOWNLOAD_HEIGHT = DOWNLOAD_WIDTH / 1.414; // Maintain A-series paper aspect ratio
+        const DOWNLOAD_WIDTH = 2000;
+        const DOWNLOAD_HEIGHT = DOWNLOAD_WIDTH / 1.414;
 
         const dataUrl = await toPng(node, {
             quality: 1,
-            pixelRatio: 1, // Set to 1 as we are controlling dimensions manually
+            pixelRatio: 1,
             backgroundColor: 'white',
             fontEmbedCSS: fontEmbedCSS,
             cacheBust: true,
@@ -1133,21 +1140,17 @@ const App = () => {
         
         database.ref('stats/downloadHistory').push(newRecord);
 
+        // Create a standard A4 landscape PDF ready for printing.
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth(); // A4 landscape width in mm (297)
+        const pdfHeight = pdf.internal.pageSize.getHeight(); // A4 landscape height in mm (210)
+        
+        // Add the generated image, stretching it to fill the entire A4 page.
+        pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        
+        pdf.save(`${filename}.pdf`);
 
-        if (format === 'png') {
-            const link = document.createElement('a');
-            link.download = `${filename}.png`;
-            link.href = dataUrl;
-            link.click();
-        } else {
-            const img = new Image();
-            img.src = dataUrl;
-            img.onload = () => {
-                const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [img.width, img.height] });
-                pdf.addImage(dataUrl, 'PNG', 0, 0, img.width, img.height);
-                pdf.save(`${filename}.pdf`);
-            }
-        }
     } catch (error) { console.error('Download error:', error); } finally { setIsLoading(false); }
   };
 
@@ -1155,8 +1158,8 @@ const App = () => {
         if (!reportRef.current) return;
         setIsLoading(true);
         try {
-            const defaultFontFamily = FONTS[0].familyCSS;
-            const fontInfo = FONTS[0];
+            const defaultFontFamily = FONTS[2].familyCSS; // Tajawal
+            const fontInfo = FONTS[2];
             const fontDataURI = await getFontDataURI(defaultFontFamily);
             const fontEmbedCSS = `
                 @font-face {
@@ -1238,11 +1241,11 @@ const App = () => {
     React.createElement(React.Fragment, null,
       React.createElement('div', { className: `min-h-screen text-white flex flex-col items-center p-4 w-full` },
         React.createElement('header', { className: "w-full max-w-4xl mx-auto flex justify-between items-center p-4 z-10 relative no-print" },
-            React.createElement('h1', { className: "text-2xl sm:text-4xl font-bold text-white tracking-widest", style: { fontFamily: "'Cocon Next Arabic', sans-serif" } }, "صنـــاعيــــو المستقبـــــل"),
+            React.createElement('h1', { className: "text-2xl sm:text-4xl font-bold text-white tracking-widest", style: { fontFamily: "'Tajawal', sans-serif" } }, "صنـــاعيــــو المستقبـــــل"),
             React.createElement('button', { onClick: handleAdminClick, className: "text-white hover:text-teal-400 transition-colors p-2" },
                  showAdmin ? React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" }))
                  : React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-7 w-7", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, 
-                     React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.066z" }),
+                     React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0 3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.066z" }),
                      React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M15 12a3 3 0 11-6 0 3 3 0 016 0z" })
                  )
             )
@@ -1266,12 +1269,11 @@ const App = () => {
                   onElementChange: handleElementChange,
                   onGlobalColorChange: handleGlobalColorChange,
                   onGlobalFontChange: handleGlobalFontChange,
-                  onDownloadPNG: () => handleDownload('png'),
                   onDownloadPDF: () => handleDownload('pdf'),
                   isLoading: isLoading,
                   isImageLoading: isImageLoading,
                 }),
-                React.createElement('div', { className: 'h-8' }),
+                React.createElement('div', { className: 'h-6' }),
                 React.createElement(CertificatePreview, {
                   templateUrl: selectedTemplate.imageUrl,
                   elements: elements,
