@@ -498,8 +498,9 @@ const AdminDashboard = ({
   }
 
   const totalDownloads = history.length;
-  const pngDownloads = history.filter(item => item.format === 'png').length;
-  const pdfDownloads = totalDownloads - pngDownloads;
+  // Note: Assuming all downloads are now PDF as per UI change
+  const pdfDownloads = totalDownloads;
+  const pngDownloads = 0; 
   
   const downloadsByTypeMap = history.reduce((acc, curr) => {
       acc.set(curr.type, (acc.get(curr.type) || 0) + 1);
@@ -545,16 +546,15 @@ const AdminDashboard = ({
               React.createElement('p', { className: "text-4xl font-bold text-white" }, totalDownloads.toLocaleString('en-US'))
             ),
             React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center print-card" },
-                React.createElement('h3', { className: "text-slate-400 text-lg mb-3" }, "PNG vs PDF"),
-                React.createElement('div', { className: "w-24 h-24 rounded-full flex items-center justify-center donut-chart-visual", style: { background: `conic-gradient(#10b981 0% ${totalDownloads > 0 ? pngDownloads / totalDownloads * 100 : 0}%, #8b5cf6 ${totalDownloads > 0 ? pngDownloads / totalDownloads * 100 : 0}% 100%)`} },
+                React.createElement('h3', { className: "text-slate-400 text-lg mb-3" }, "نوع التحميل"),
+                 React.createElement('div', { className: "w-24 h-24 rounded-full flex items-center justify-center bg-purple-500" },
                     React.createElement('div', { className: "w-20 h-20 rounded-full bg-slate-800 flex flex-col items-center justify-center" },
-                         React.createElement('span', { className: "text-xs text-slate-300" }, totalDownloads.toLocaleString('en-US')),
-                         React.createElement('span', { className: "text-xs text-slate-400" }, "تحميل")
+                         React.createElement('span', { className: "text-2xl font-bold text-white" }, "PDF"),
+                         React.createElement('span', { className: "text-xs text-slate-400" }, `${pdfDownloads.toLocaleString('en-US')} تحميل`)
                     )
                 ),
                 React.createElement('div', { className: "donut-chart-print-summary text-right space-y-1" },
-                  React.createElement('p', null, `PNG: ${pngDownloads.toLocaleString('en-US')} تحميل (${totalDownloads > 0 ? ((pngDownloads / totalDownloads) * 100).toFixed(1) : 0}%)`),
-                  React.createElement('p', null, `PDF: ${pdfDownloads.toLocaleString('en-US')} تحميل (${totalDownloads > 0 ? ((pdfDownloads / totalDownloads) * 100).toFixed(1) : 0}%)`)
+                  React.createElement('p', null, `PDF: ${pdfDownloads.toLocaleString('en-US')} تحميل (100%)`)
                 )
             )
           ),
@@ -832,7 +832,7 @@ const Controls = ({
   const isBold = nameElement?.fontWeight === 'bold';
   
   const isBusy = isLoading || isImageLoading;
-  const busyText = isImageLoading ? 'تحميل القالب...' : 'جاري التحميل...';
+  const busyText = isImageLoading ? 'تحميل القالب...' : 'جاري التحضير...';
 
   return (
     React.createElement('div', { className: "w-full max-w-4xl mx-auto space-y-4 relative z-10 no-print" },
@@ -1038,24 +1038,40 @@ const App = () => {
     return () => { window.removeEventListener('resize', init); cancelAnimationFrame(animationFrameId); };
   }, []);
   
-  const getFontDataURI = async (fontFamily) => {
+  const getFontDataURI = useCallback(async (fontFamily) => {
     const fontInfo = FONTS.find(f => f.familyCSS === fontFamily);
-    if (!fontInfo) throw new Error('Font not found');
+    if (!fontInfo) throw new Error(`Font not found: ${fontFamily}`);
 
     if (fontCache.current[fontInfo.url]) {
         return fontCache.current[fontInfo.url];
     }
 
     const response = await fetch(fontInfo.url);
+    if (!response.ok) throw new Error(`Failed to fetch font: ${response.statusText}`);
     const blob = await response.blob();
-    const dataURI = await new Promise((resolve) => {
+    const dataURI = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
         reader.readAsDataURL(blob);
     });
     fontCache.current[fontInfo.url] = dataURI;
     return dataURI;
-  };
+  }, []);
+
+  useEffect(() => {
+      // Pre-warm the font cache on initial load to improve performance and reliability, especially on Safari.
+      const prewarmFonts = async () => {
+          try {
+              for (const font of FONTS) {
+                  await getFontDataURI(font.familyCSS);
+              }
+          } catch (error) {
+              console.error("Failed to pre-warm font cache:", error);
+          }
+      };
+      prewarmFonts();
+  }, [getFontDataURI]);
 
   const selectedTemplate = CERTIFICATE_TEMPLATES.find(t => t.id === selectedTemplateId) || CERTIFICATE_TEMPLATES[0];
   const handleTemplateChange = (templateId) => { setIsImageLoading(true); setSelectedTemplateId(templateId); setElements(getSanitizedInitialState()); };
@@ -1108,7 +1124,7 @@ const App = () => {
       
     if (!previewRef.current) return;
 
-    // Open window immediately to avoid pop-up blockers
+    // Open window immediately to avoid pop-up blockers, a critical step for iOS.
     const pdfWindow = window.open('', '_blank');
     if (!pdfWindow) {
         setAlertMessage("يرجى السماح بالنوافذ المنبثقة لتنزيل الشهادة.");
@@ -1166,8 +1182,14 @@ const App = () => {
         const pdfBlob = pdf.output('blob');
         const url = URL.createObjectURL(pdfBlob);
 
-        // Update the already-opened window
-        pdfWindow.location.href = url;
+        // Update the already-opened window by embedding the PDF in an iframe for max compatibility.
+        pdfWindow.document.open();
+        pdfWindow.document.write(
+            `<html><head><title>${studentName} - شهادة</title><style>body,html{margin:0;padding:0;overflow:hidden;}</style></head><body>` +
+            `<iframe width="100%" height="100%" style="border:none;" src="${url}"></iframe>` +
+            `</body></html>`
+        );
+        pdfWindow.document.close();
 
     } catch (error) {
         console.error('Download error:', error);
