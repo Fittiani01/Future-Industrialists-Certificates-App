@@ -6,6 +6,11 @@
     <title>شهادات صناعيو المستقبل</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Preload the primary custom font for faster rendering -->
+    <!-- الرجاء وضع رابط ملف WOFF2 الجديد هنا -->
+    <link rel="preload" href="https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2FCoconNextArabic-Light.woff2?alt=media&token=AL-WOFF2-TOKEN-JDEED" as="font" type="font/woff2" crossorigin="anonymous">
+
     <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200..1000&family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
     <script type="importmap">
 {
@@ -26,9 +31,13 @@
     <style>
       @font-face {
         font-family: 'Cocon Next Arabic';
-        src: url('https://firebasestorage.googleapis.com/v0/b/genai-409315.appspot.com/o/fonts%2FCoconNextArabic-Light.otf?alt=media&token=72863a35-86a0-4a25-b049-75c13e618f0a') format('opentype');
+        /* --- هام جداً: يرجى استبدال الروابط التالية بالروابط الجديدة الكاملة من Firebase Storage --- */
+        src: url('https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2FCoconNextArabic-Light.woff2?alt=media&token=AL-WOFF2-TOKEN-JDEED') format('woff2'),
+             url('https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2FCoconNextArabic-Light.woff?alt=media&token=AL-WOFF-TOKEN-JDEED') format('woff'),
+             url('https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2FCoconNextArabic-Light.otf?alt=media&token=AL-OTF-TOKEN-JDEED') format('opentype');
         font-weight: normal;
         font-style: normal;
+        font-display: swap; /* Improves user experience by showing text with a fallback font while the custom font loads */
       }
       body {
         font-family: 'Cocon Next Arabic', sans-serif;
@@ -178,7 +187,8 @@ const CERTIFICATE_TEMPLATES = [
 
 const TEXT_COLORS = ['#37346d', '#00a49a', '#4682B4', '#606060'];
 const FONTS = [
-  { name: 'الخط الأساسي', familyName: 'Cocon Next Arabic', familyCSS: "'Cocon Next Arabic', sans-serif", url: 'https://firebasestorage.googleapis.com/v0/b/genai-409315.appspot.com/o/fonts%2FCoconNextArabic-Light.otf?alt=media&token=72863a35-86a0-4a25-b049-75c13e618f0a', format: 'opentype' },
+  // الرجاء وضع رابط ملف WOFF2 الجديد هنا أيضاً
+  { name: 'الخط الأساسي', familyName: 'Cocon Next Arabic', familyCSS: "'Cocon Next Arabic', sans-serif", url: 'https://firebasestorage.googleapis.com/v0/b/future-industrialists.firebasestorage.app/o/Fonts%2FCoconNextArabic-Light.woff2?alt=media&token=AL-WOFF2-TOKEN-JDEED', format: 'woff2' },
   { name: 'كايرو', familyName: 'Cairo', familyCSS: "'Cairo', sans-serif", url: 'https://fonts.gstatic.com/s/cairo/v28/SLXgc-MA-13aa-scHrU.woff2', format: 'woff2' },
   { name: 'أميري', familyName: 'Amiri', familyCSS: "'Amiri', serif", url: 'https://fonts.gstatic.com/s/amiri/v26/J7acnpd8CGxBHpU.woff2', format: 'woff2' },
   { name: 'تجوال', familyName: 'Tajawal', familyCSS: "'Tajawal', sans-serif", url: 'https://fonts.gstatic.com/s/tajawal/v11/Iura6YBj_oCad4k.woff2', format: 'woff2' },
