@@ -644,8 +644,7 @@ const AdminDashboard = ({
 const CertificatePreview = ({
   templateUrl,
   elements,
-  previewRef,
-  onImageLoad
+  previewRef
 }) => {
   return (
     React.createElement('div', { className: "w-full max-w-4xl mx-auto flex flex-col items-center" },
@@ -657,9 +656,7 @@ const CertificatePreview = ({
             React.createElement('img', { 
                 src: templateUrl, 
                 className: "w-full h-full object-cover rounded-2xl", 
-                alt: "Certificate Background",
-                crossOrigin: "anonymous",
-                onLoad: onImageLoad
+                alt: "Certificate Background"
             }),
             Object.keys(elements).map((key) => {
               const element = elements[key];
@@ -957,6 +954,7 @@ const App = () => {
   });
 
   const [elements, setElements] = useState(getSanitizedInitialState);
+  const [templateDataUrl, setTemplateDataUrl] = useState('');
   
   const [isLoading, setIsLoading] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(true);
@@ -1025,6 +1023,37 @@ const App = () => {
     return () => statsRef.off('value', listener);
   }, []);
 
+  useEffect(() => {
+    const fetchAndCacheTemplate = async () => {
+      const template = CERTIFICATE_TEMPLATES.find(t => t.id === selectedTemplateId);
+      if (!template) return;
+
+      setIsImageLoading(true);
+      setTemplateDataUrl(''); // Clear previous image
+      try {
+        const response = await fetch(template.imageUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setTemplateDataUrl(reader.result);
+          setIsImageLoading(false);
+        };
+        reader.onerror = () => {
+          console.error("Failed to read blob as Data URL");
+          setIsImageLoading(false);
+        };
+        reader.readAsDataURL(blob);
+      } catch (error) {
+        console.error("Error fetching template image:", error);
+        setIsImageLoading(false);
+      }
+    };
+    fetchAndCacheTemplate();
+  }, [selectedTemplateId]);
+
 
   useEffect(() => {
     const canvas = document.getElementById('network-canvas');
@@ -1050,8 +1079,7 @@ const App = () => {
     return () => { window.removeEventListener('resize', init); cancelAnimationFrame(animationFrameId); };
   }, []);
 
-  const selectedTemplate = CERTIFICATE_TEMPLATES.find(t => t.id === selectedTemplateId) || CERTIFICATE_TEMPLATES[0];
-  const handleTemplateChange = (templateId) => { setIsImageLoading(true); setSelectedTemplateId(templateId); setElements(getSanitizedInitialState()); };
+  const handleTemplateChange = (templateId) => { setSelectedTemplateId(templateId); setElements(getSanitizedInitialState()); };
   const handleElementChange = (id, updates) => setElements(prev => ({ ...prev, [id]: { ...prev[id], ...updates } }));
   const handleGlobalColorChange = (color) => setElements(prev => { const newElements = {...prev}; for(const key in newElements) { newElements[key].color = color; } return newElements; });
   
@@ -1120,11 +1148,10 @@ const App = () => {
         
         const dataUrl = await toPng(node, {
             quality: 1,
-            pixelRatio: 3,
+            pixelRatio: 2,
             backgroundColor: 'white',
             cacheBust: true,
-            fontEmbedCSS: fontEmbedCSS,
-            useCORS: true
+            fontEmbedCSS: fontEmbedCSS
         });
         
         const newRecord = { 
@@ -1182,7 +1209,6 @@ const App = () => {
                 width: node.scrollWidth,
                 height: node.scrollHeight,
                 fontEmbedCSS: fontEmbedCSS,
-                useCORS: true
             });
             const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' });
             const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -1287,10 +1313,9 @@ const App = () => {
                 }),
                 React.createElement('div', { className: 'h-6' }),
                 React.createElement(CertificatePreview, {
-                  templateUrl: selectedTemplate.imageUrl,
+                  templateUrl: templateDataUrl,
                   elements: elements,
                   previewRef: previewRef,
-                  onImageLoad: () => setIsImageLoading(false)
                 })
             )
         )
