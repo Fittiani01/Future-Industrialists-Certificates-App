@@ -901,17 +901,12 @@ const Controls = ({
             )
         )
       ),
-       React.createElement('div', { className: "grid grid-cols-1 sm:grid-cols-2 gap-4 w-full" },
-            React.createElement('button', {
-              onClick: () => onDownload('png'),
-              disabled: isBusy,
-              className: "w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-emerald-500 transition-all duration-200 disabled:opacity-50"
-            }, isBusy ? busyText : 'تحميل PNG'),
-            React.createElement('button', {
-              onClick: () => onDownload('pdf'),
-              disabled: isBusy,
-              className: "w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-purple-500 transition-all duration-200 disabled:opacity-50"
-            }, isBusy ? busyText : 'تحميل PDF')
+      React.createElement('div', { className: "grid grid-cols-1" },
+          React.createElement('button', {
+            onClick: onDownload,
+            disabled: isBusy,
+            className: "w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-emerald-500 transition-all duration-200 disabled:opacity-50"
+          }, isBusy ? busyText : 'تحميل الشهادة')
       )
     )
   );
@@ -1097,7 +1092,7 @@ const App = () => {
     });
   };
 
-  const handleDownload = async (format) => {
+  const handleDownload = async () => {
     const studentNameValue = elements['name']?.text.trim();
     const schoolNameValue = elements['school']?.text.trim();
 
@@ -1112,7 +1107,18 @@ const App = () => {
     }
       
     if (!previewRef.current) return;
+
+    // Open window immediately to avoid pop-up blockers
+    const pdfWindow = window.open('', '_blank');
+    if (!pdfWindow) {
+        setAlertMessage("يرجى السماح بالنوافذ المنبثقة لتنزيل الشهادة.");
+        setShowAlertModal(true);
+        return;
+    }
+    pdfWindow.document.write('<html><head><title>جاري تحضير الشهادة...</title><style>body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif;background:#1e293b;color:white;font-size:1.2rem;}</style></head><body><p>جاري تحضير الشهادة، يرجى الانتظار...</p></body></html>');
+
     setIsLoading(true);
+    
     try {
         const node = previewRef.current;
         const studentName = studentNameValue || 'شهادة';
@@ -1138,10 +1144,9 @@ const App = () => {
             cacheBust: true,
         });
         
-        const filename = `شهادة صناعيو المستقبل_${studentName}`;
         const newRecord = { 
             type: selectedTemplateId, 
-            format, 
+            format: 'pdf', 
             timestamp: new Date().toISOString(),
             student: studentName,
             school: schoolName,
@@ -1149,27 +1154,29 @@ const App = () => {
         
         database.ref('stats/downloadHistory').push(newRecord);
 
-        if (format === 'png') {
-            const link = document.createElement('a');
-            link.download = `${filename}.png`;
-            link.href = dataUrl;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } else { // 'pdf'
-            const pdf = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: 'a4'
-            });
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            const pdfBlob = pdf.output('blob');
-            const url = URL.createObjectURL(pdfBlob);
-            window.open(url);
+        const pdf = new jsPDF({
+            orientation: 'landscape',
+            unit: 'mm',
+            format: 'a4'
+        });
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        
+        const pdfBlob = pdf.output('blob');
+        const url = URL.createObjectURL(pdfBlob);
+
+        // Update the already-opened window
+        pdfWindow.location.href = url;
+
+    } catch (error) {
+        console.error('Download error:', error);
+        if (pdfWindow) {
+            pdfWindow.document.body.innerHTML = '<p>حدث خطأ أثناء إنشاء الشهادة. يرجى إغلاق هذه النافذة والمحاولة مرة أخرى.</p>';
         }
-    } catch (error) { console.error('Download error:', error); } finally { setIsLoading(false); }
+    } finally {
+        setIsLoading(false);
+    }
   };
 
     const handleDownloadPdfReport = async () => {
