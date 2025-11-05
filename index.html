@@ -1124,6 +1124,7 @@ const App = () => {
             backgroundColor: 'white',
             cacheBust: true,
             fontEmbedCSS: fontEmbedCSS,
+            useCORS: true
         });
         
         const newRecord = { 
@@ -1180,7 +1181,8 @@ const App = () => {
                 backgroundColor: '#0f172a',
                 width: node.scrollWidth,
                 height: node.scrollHeight,
-                fontEmbedCSS: fontEmbedCSS
+                fontEmbedCSS: fontEmbedCSS,
+                useCORS: true
             });
             const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' });
             const pdfWidth = pdf.internal.pageSize.getWidth();
