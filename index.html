@@ -822,7 +822,7 @@ const Controls = ({
   onGlobalColorChange,
   onGlobalFontSizeChange,
   onGlobalFontWeightToggle,
-  onDownloadPDF,
+  onDownload,
   isLoading,
   isImageLoading,
 }) => {
@@ -832,7 +832,7 @@ const Controls = ({
   const isBold = nameElement?.fontWeight === 'bold';
   
   const isBusy = isLoading || isImageLoading;
-  const pdfButtonText = isImageLoading ? 'تحميل القالب...' : (isLoading ? 'جاري التحميل...' : 'تحميل الشهادة');
+  const busyText = isImageLoading ? 'تحميل القالب...' : 'جاري التحميل...';
 
   return (
     React.createElement('div', { className: "w-full max-w-4xl mx-auto space-y-4 relative z-10 no-print" },
@@ -901,12 +901,17 @@ const Controls = ({
             )
         )
       ),
-       React.createElement('div', { className: "w-full" },
-        React.createElement('button', {
-          onClick: onDownloadPDF,
-          disabled: isBusy,
-          className: "w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-purple-500 transition-all duration-200 disabled:opacity-50"
-        }, pdfButtonText)
+       React.createElement('div', { className: "grid grid-cols-1 sm:grid-cols-2 gap-4 w-full" },
+            React.createElement('button', {
+              onClick: () => onDownload('png'),
+              disabled: isBusy,
+              className: "w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-emerald-500 transition-all duration-200 disabled:opacity-50"
+            }, isBusy ? busyText : 'تحميل PNG'),
+            React.createElement('button', {
+              onClick: () => onDownload('pdf'),
+              disabled: isBusy,
+              className: "w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-purple-500 transition-all duration-200 disabled:opacity-50"
+            }, isBusy ? busyText : 'تحميل PDF')
       )
     )
   );
@@ -1125,10 +1130,9 @@ const App = () => {
             }
         `;
 
-        // 1. Generate a high-resolution image for printing
         const dataUrl = await toPng(node, {
             quality: 1,
-            pixelRatio: 3, // Increased for high-quality printing
+            pixelRatio: 3,
             backgroundColor: 'white',
             fontEmbedCSS: fontEmbedCSS,
             cacheBust: true,
@@ -1145,25 +1149,26 @@ const App = () => {
         
         database.ref('stats/downloadHistory').push(newRecord);
 
-        // 2. Create a standard A4 PDF document in landscape mode
-        const pdf = new jsPDF({
-            orientation: 'landscape',
-            unit: 'mm',
-            format: 'a4'
-        });
-        
-        // 3. Get the page dimensions in millimeters
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        // 4. Add the image, stretching it to fill the entire A4 page
-        pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        
-        // 5. Save the final PDF using a universally compatible method
-        const pdfBlob = pdf.output('blob');
-        const url = URL.createObjectURL(pdfBlob);
-        window.open(url); // Opens in a new tab, works on all devices
-
+        if (format === 'png') {
+            const link = document.createElement('a');
+            link.download = `${filename}.png`;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else { // 'pdf'
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            const pdfBlob = pdf.output('blob');
+            const url = URL.createObjectURL(pdfBlob);
+            window.open(url);
+        }
     } catch (error) { console.error('Download error:', error); } finally { setIsLoading(false); }
   };
 
@@ -1290,7 +1295,7 @@ const App = () => {
                   onGlobalColorChange: handleGlobalColorChange,
                   onGlobalFontSizeChange: handleGlobalFontSizeChange,
                   onGlobalFontWeightToggle: handleGlobalFontWeightToggle,
-                  onDownloadPDF: () => handleDownload('pdf'),
+                  onDownload: handleDownload,
                   isLoading: isLoading,
                   isImageLoading: isImageLoading,
                 }),
