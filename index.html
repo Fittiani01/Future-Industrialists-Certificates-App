@@ -653,7 +653,7 @@ const CertificatePreview = ({
           className: "w-full aspect-[1.414/1] bg-white rounded-2xl shadow-2xl relative overflow-hidden" 
       },
           React.createElement('div', { className: "absolute inset-0" },
-            React.createElement('img', { 
+            templateUrl && React.createElement('img', { 
                 src: templateUrl, 
                 crossOrigin: "anonymous",
                 className: "w-full h-full object-cover rounded-2xl", 
@@ -967,6 +967,7 @@ const App = () => {
   
   const [downloadHistory, setDownloadHistory] = useState([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const [templateDataUrl, setTemplateDataUrl] = useState('');
 
   const previewRef = useRef(null);
   const reportRef = useRef(null);
@@ -1028,16 +1029,31 @@ const App = () => {
     if (!template) return;
 
     setIsImageLoading(true);
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-        setIsImageLoading(false);
-    };
-    img.onerror = (e) => {
-        console.error("Error loading template image:", e);
-        setIsImageLoading(false);
-    };
-    img.src = template.imageUrl;
+    setTemplateDataUrl(''); // Clear previous image
+
+    fetch(template.imageUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.blob();
+        })
+        .then(blob => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        }))
+        .then(dataUrl => {
+            setTemplateDataUrl(dataUrl);
+            setIsImageLoading(false);
+        })
+        .catch(error => {
+            console.error("Error fetching and converting template image:", error);
+            // Fallback to original URL if conversion fails
+            setTemplateDataUrl(template.imageUrl);
+            setIsImageLoading(false);
+        });
   }, [selectedTemplateId]);
 
 
@@ -1293,7 +1309,7 @@ const App = () => {
                 }),
                 React.createElement('div', { className: 'h-6' }),
                 React.createElement(CertificatePreview, {
-                  templateUrl: selectedTemplate.imageUrl,
+                  templateUrl: templateDataUrl,
                   elements: elements,
                   previewRef: previewRef,
                 })
