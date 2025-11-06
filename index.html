@@ -652,20 +652,18 @@ const CertificatePreview = ({
           ref: previewRef,
           className: "w-full aspect-[1.414/1] bg-white rounded-2xl shadow-2xl relative overflow-hidden" 
       },
-          templateUrl && React.createElement('div', {
+          templateUrl && React.createElement('img', {
+            src: templateUrl,
+            alt: "Certificate Background",
             style: {
               position: 'absolute',
               top: 0,
               left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundImage: `url(${templateUrl})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center center',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover'
             },
-            className: "rounded-2xl",
-            role: "img",
-            "aria-label": "Certificate Background"
+            className: "rounded-2xl"
           }),
           Object.keys(elements).map((key) => {
             const element = elements[key];
@@ -1145,6 +1143,14 @@ const App = () => {
         const node = previewRef.current;
         const studentName = studentNameValue || 'شهادة';
         const schoolName = schoolNameValue || 'غير محدد';
+        
+        // Detect iOS for specific handling
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        if (isIOS) {
+            // Add a small delay for iOS to ensure the image is fully rendered
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
         
         const fontEmbedCSS = await getFontEmbedCSS(node);
         
