@@ -652,45 +652,53 @@ const CertificatePreview = ({
           ref: previewRef,
           className: "w-full aspect-[1.414/1] bg-white rounded-2xl shadow-2xl relative overflow-hidden" 
       },
-          React.createElement('div', { className: "absolute inset-0" },
-            templateUrl && React.createElement('img', { 
-                src: templateUrl, 
-                crossOrigin: "anonymous",
-                className: "w-full h-full object-cover rounded-2xl", 
-                alt: "Certificate Background"
-            }),
-            Object.keys(elements).map((key) => {
-              const element = elements[key];
-              const placeholderText = key === 'name' ? 'الاســـم' : 'المدرســـة';
-              const textToRender = element.text || placeholderText;
-              
-              const fontInfo = FONTS.find(f => f.familyCSS === element.fontFamily);
-              const fontFamilyForStyle = fontInfo ? fontInfo.familyName : 'sans-serif';
+          templateUrl && React.createElement('div', {
+            style: {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `url(${templateUrl})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center center',
+            },
+            className: "rounded-2xl",
+            role: "img",
+            "aria-label": "Certificate Background"
+          }),
+          Object.keys(elements).map((key) => {
+            const element = elements[key];
+            const placeholderText = key === 'name' ? 'الاســـم' : 'المدرســـة';
+            const textToRender = element.text || placeholderText;
+            
+            const fontInfo = FONTS.find(f => f.familyCSS === element.fontFamily);
+            const fontFamilyForStyle = fontInfo ? fontInfo.familyName : 'sans-serif';
 
-              return (
-                React.createElement('div', {
-                  key: key,
-                  style: {
-                    position: 'absolute',
-                    left: `${element.position.x}%`,
-                    top: `${element.position.y}%`,
-                    transform: 'translate(-100%, -50%)',
-                    fontSize: `${element.fontSize}px`,
-                    color: element.color,
-                    fontWeight: element.fontWeight,
-                    userSelect: 'none',
-                    whiteSpace: 'nowrap',
-                    direction: 'rtl',
-                    fontFamily: fontFamilyForStyle,
-                  }
-                }, textToRender)
-              );
-            })
-          )
+            return (
+              React.createElement('div', {
+                key: key,
+                style: {
+                  position: 'absolute',
+                  left: `${element.position.x}%`,
+                  top: `${element.position.y}%`,
+                  transform: 'translate(-100%, -50%)',
+                  fontSize: `${element.fontSize}px`,
+                  color: element.color,
+                  fontWeight: element.fontWeight,
+                  userSelect: 'none',
+                  whiteSpace: 'nowrap',
+                  direction: 'rtl',
+                  fontFamily: fontFamilyForStyle,
+                }
+              }, textToRender)
+            );
+          })
       )
     )
   );
 };
+
 
 // --- SearchableDropdown Component ---
 const SearchableDropdown = ({ options, value, onChange, placeholder }) => {
