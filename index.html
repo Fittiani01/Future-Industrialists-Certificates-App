@@ -655,6 +655,7 @@ const CertificatePreview = ({
           React.createElement('div', { className: "absolute inset-0" },
             React.createElement('img', { 
                 src: templateUrl, 
+                crossOrigin: "anonymous",
                 className: "w-full h-full object-cover rounded-2xl", 
                 alt: "Certificate Background"
             }),
@@ -954,7 +955,6 @@ const App = () => {
   });
 
   const [elements, setElements] = useState(getSanitizedInitialState);
-  const [templateDataUrl, setTemplateDataUrl] = useState('');
   
   const [isLoading, setIsLoading] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(true);
@@ -1024,34 +1024,20 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    const fetchAndCacheTemplate = async () => {
-      const template = CERTIFICATE_TEMPLATES.find(t => t.id === selectedTemplateId);
-      if (!template) return;
+    const template = CERTIFICATE_TEMPLATES.find(t => t.id === selectedTemplateId);
+    if (!template) return;
 
-      setIsImageLoading(true);
-      setTemplateDataUrl(''); // Clear previous image
-      try {
-        const response = await fetch(template.imageUrl);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch image: ${response.statusText}`);
-        }
-        const blob = await response.blob();
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setTemplateDataUrl(reader.result);
-          setIsImageLoading(false);
-        };
-        reader.onerror = () => {
-          console.error("Failed to read blob as Data URL");
-          setIsImageLoading(false);
-        };
-        reader.readAsDataURL(blob);
-      } catch (error) {
-        console.error("Error fetching template image:", error);
+    setIsImageLoading(true);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
         setIsImageLoading(false);
-      }
     };
-    fetchAndCacheTemplate();
+    img.onerror = (e) => {
+        console.error("Error loading template image:", e);
+        setIsImageLoading(false);
+    };
+    img.src = template.imageUrl;
   }, [selectedTemplateId]);
 
 
@@ -1128,15 +1114,7 @@ const App = () => {
     }
       
     if (!previewRef.current) return;
-
-    const pdfWindow = window.open('', '_blank');
-    if (!pdfWindow) {
-        setAlertMessage("يرجى السماح بالنوافذ المنبثقة لتنزيل الشهادة.");
-        setShowAlertModal(true);
-        return;
-    }
-    pdfWindow.document.write('<html><head><title>جاري تحضير الشهادة...</title><style>body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif;background:#1e293b;color:white;font-size:1.2rem;}</style></head><body><p>جاري تحضير الشهادة، يرجى الانتظار...</p></body></html>');
-
+    
     setIsLoading(true);
     
     try {
@@ -1176,21 +1154,19 @@ const App = () => {
         pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
         
         const pdfBlob = pdf.output('blob');
-        const url = URL.createObjectURL(pdfBlob);
-
-        pdfWindow.document.open();
-        pdfWindow.document.write(
-            `<html><head><title>${studentName} - شهادة</title><style>body,html{margin:0;padding:0;overflow:hidden;}</style></head><body>` +
-            `<iframe width="100%" height="100%" style="border:none;" src="${url}"></iframe>` +
-            `</body></html>`
-        );
-        pdfWindow.document.close();
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(pdfBlob);
+        const fileName = `${studentName.replace(/[/\\?%*:|"<>]/g, '-')}.pdf`;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
 
     } catch (error) {
         console.error('Download error:', error);
-        if (pdfWindow) {
-            pdfWindow.document.body.innerHTML = '<p style="text-align: right; direction: rtl; padding: 20px;">حدث خطأ أثناء إنشاء الشهادة. يرجى إغلاق هذه النافذة والمحاولة مرة أخرى.</p>';
-        }
+        setAlertMessage("حدث خطأ أثناء إنشاء الشهادة. يرجى المحاولة مرة أخرى.");
+        setShowAlertModal(true);
     } finally {
         setIsLoading(false);
     }
@@ -1275,6 +1251,8 @@ const App = () => {
   );
   
   const isFirebaseConfigured = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("AIzaSyBh61RDyPcpP03Kp7YEyCQhGLP7JhBw-ps");
+  
+  const selectedTemplate = CERTIFICATE_TEMPLATES.find(t => t.id === selectedTemplateId) || CERTIFICATE_TEMPLATES[0];
 
   return (
     React.createElement(React.Fragment, null,
@@ -1315,7 +1293,7 @@ const App = () => {
                 }),
                 React.createElement('div', { className: 'h-6' }),
                 React.createElement(CertificatePreview, {
-                  templateUrl: templateDataUrl,
+                  templateUrl: selectedTemplate.imageUrl,
                   elements: elements,
                   previewRef: previewRef,
                 })
