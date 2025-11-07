@@ -511,9 +511,17 @@ const AdminDashboard = ({
   }
 
   const totalDownloads = history.length;
-  // Note: Assuming all downloads are now PDF as per UI change
-  const pdfDownloads = totalDownloads;
-  const pngDownloads = 0; 
+  const { pdfDownloads, pngDownloads } = history.reduce((acc, curr) => {
+      if (curr.format === 'png') {
+          acc.pngDownloads += 1;
+      } else {
+          acc.pdfDownloads += 1;
+      }
+      return acc;
+  }, { pdfDownloads: 0, pngDownloads: 0 });
+
+  const pdfPercentage = totalDownloads > 0 ? (pdfDownloads / totalDownloads) * 100 : 0;
+  const conicGradient = `conic-gradient(#a855f7 0% ${pdfPercentage}%, #10b981 ${pdfPercentage}% 100%)`;
   
   const downloadsByTypeMap = history.reduce((acc, curr) => {
       acc.set(curr.type, (acc.get(curr.type) || 0) + 1);
@@ -560,14 +568,28 @@ const AdminDashboard = ({
             ),
             React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center print-card" },
                 React.createElement('h3', { className: "text-slate-400 text-lg mb-3" }, "نوع التحميل"),
-                 React.createElement('div', { className: "w-24 h-24 rounded-full flex items-center justify-center bg-purple-500" },
+                React.createElement('div', {
+                    className: "w-24 h-24 rounded-full flex items-center justify-center donut-chart-visual",
+                    style: { background: conicGradient }
+                },
                     React.createElement('div', { className: "w-20 h-20 rounded-full bg-slate-800 flex flex-col items-center justify-center" },
-                         React.createElement('span', { className: "text-2xl font-bold text-white" }, "PDF"),
-                         React.createElement('span', { className: "text-xs text-slate-400" }, `${pdfDownloads.toLocaleString('en-US')} تحميل`)
+                        React.createElement('span', { className: "text-xl font-bold text-white" }, totalDownloads.toLocaleString('en-US')),
+                        React.createElement('span', { className: "text-xs text-slate-400" }, "تحميل")
+                    )
+                ),
+                React.createElement('div', { className: "flex justify-center gap-4 mt-4 donut-chart-visual" },
+                    pdfDownloads > 0 && React.createElement('div', { className: "flex items-center gap-2" },
+                        React.createElement('div', { className: "w-3 h-3 rounded-full", style: { backgroundColor: '#a855f7' } }),
+                        React.createElement('span', { className: "text-sm text-slate-300" }, `PDF (${pdfDownloads})`)
+                    ),
+                    pngDownloads > 0 && React.createElement('div', { className: "flex items-center gap-2" },
+                        React.createElement('div', { className: "w-3 h-3 rounded-full", style: { backgroundColor: '#10b981' } }),
+                        React.createElement('span', { className: "text-sm text-slate-300" }, `PNG (${pngDownloads})`)
                     )
                 ),
                 React.createElement('div', { className: "donut-chart-print-summary text-right space-y-1" },
-                  React.createElement('p', null, `PDF: ${pdfDownloads.toLocaleString('en-US')} تحميل (100%)`)
+                    React.createElement('p', null, `PDF: ${pdfDownloads.toLocaleString('en-US')} تحميل (${pdfPercentage.toFixed(1)}%)`),
+                    pngDownloads > 0 && React.createElement('p', null, `PNG: ${pngDownloads.toLocaleString('en-US')} تحميل (${(100 - pdfPercentage).toFixed(1)}%)`)
                 )
             )
           ),
@@ -842,6 +864,7 @@ const Controls = ({
   onDownload,
   isLoading,
   isImageLoading,
+  isIOS,
 }) => {
   const nameElement = elements['name'];
   const schoolElement = elements['school'];
@@ -850,6 +873,7 @@ const Controls = ({
   
   const isBusy = isLoading || isImageLoading;
   const busyText = isImageLoading ? 'تحميل القالب...' : 'جاري التحضير...';
+  const downloadButtonText = isIOS ? 'حفظ الشهادة كصورة' : 'تحميل الشهادة';
 
   return (
     React.createElement('div', { className: "w-full max-w-4xl mx-auto space-y-4 relative z-10 no-print" },
@@ -923,7 +947,7 @@ const Controls = ({
             onClick: onDownload,
             disabled: isBusy,
             className: "w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-emerald-500 transition-all duration-200 disabled:opacity-50"
-          }, isBusy ? busyText : 'تحميل الشهادة')
+          }, isBusy ? busyText : downloadButtonText)
       )
     )
   );
@@ -977,6 +1001,7 @@ const App = () => {
 
   const previewRef = useRef(null);
   const reportRef = useRef(null);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
   useEffect(() => {
       localStorage.setItem('selectedTemplateId', selectedTemplateId);
@@ -1120,6 +1145,40 @@ const App = () => {
         return newElements;
     });
   };
+  
+  const saveAsImageIOS = async (node, studentName) => {
+    const fontEmbedCSS = await getFontEmbedCSS(node);
+    const options = { quality: 1, pixelRatio: 2, backgroundColor: 'white', cacheBust: true, fontEmbedCSS: fontEmbedCSS, width: node.clientWidth, height: node.clientHeight };
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+    let dataUrl = await toPng(node, options);
+
+    if (dataUrl.length < 15000) {
+        console.warn('Safari/iOS: First image capture seems blank. Retrying...');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        dataUrl = await toPng(node, options);
+    }
+    
+    try {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], `${studentName.replace(/[/\\?%*:|"<>]/g, '-')}.png`, { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: 'الشهادة' });
+            return;
+        }
+        throw new Error("Web Share not supported, falling back.");
+    } catch (err) {
+        console.warn('Web Share API failed, falling back.', err);
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write(`<title>شهادة - ${studentName}</title><img src="${dataUrl}" style="width:100%;height:auto;display:block" alt="certificate">`);
+        } else {
+            window.open(dataUrl, '_blank');
+        }
+    }
+  };
 
   const handleDownload = async () => {
     const studentNameValue = elements['name']?.text.trim();
@@ -1144,55 +1203,69 @@ const App = () => {
         const studentName = studentNameValue || 'شهادة';
         const schoolName = schoolNameValue || 'غير محدد';
         
-        // Detect iOS for specific handling
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
         if (isIOS) {
-            // Add a small delay for iOS to ensure the image is fully rendered
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await saveAsImageIOS(node, studentName);
+            const newRecord = { 
+                type: selectedTemplateId, 
+                format: 'png', 
+                timestamp: new Date().toISOString(),
+                student: studentName,
+                school: schoolName,
+            };
+            database.ref('stats/downloadHistory').push(newRecord);
+
+        } else {
+             // --- Enhanced Safari/Desktop & other browsers PDF generation ---
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            const isAppleBrowser = isIOS || isSafari;
+
+            const fontEmbedCSS = await getFontEmbedCSS(node);
+            const options = {
+                quality: 1,
+                pixelRatio: 2,
+                backgroundColor: 'white',
+                cacheBust: true,
+                fontEmbedCSS: fontEmbedCSS,
+                width: node.clientWidth,
+                height: node.clientHeight
+            };
+
+            let dataUrl;
+            if (isAppleBrowser) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                dataUrl = await toPng(node, options);
+                if (dataUrl.length < 15000) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    dataUrl = await toPng(node, options);
+                }
+            } else {
+                dataUrl = await toPng(node, options);
+            }
+            
+            const newRecord = { 
+                type: selectedTemplateId, 
+                format: 'pdf', 
+                timestamp: new Date().toISOString(),
+                student: studentName,
+                school: schoolName,
+            };
+            database.ref('stats/downloadHistory').push(newRecord);
+
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            
+            const pdfBlob = pdf.output('blob');
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(pdfBlob);
+            const fileName = `${studentName.replace(/[/\\?%*:|"<>]/g, '-')}.pdf`;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
         }
-        
-        const fontEmbedCSS = await getFontEmbedCSS(node);
-        
-        const dataUrl = await toPng(node, {
-            quality: 1,
-            pixelRatio: 2,
-            backgroundColor: 'white',
-            cacheBust: true,
-            fontEmbedCSS: fontEmbedCSS,
-            width: node.clientWidth,
-            height: node.clientHeight
-        });
-        
-        const newRecord = { 
-            type: selectedTemplateId, 
-            format: 'pdf', 
-            timestamp: new Date().toISOString(),
-            student: studentName,
-            school: schoolName,
-        };
-        
-        database.ref('stats/downloadHistory').push(newRecord);
-
-        const pdf = new jsPDF({
-            orientation: 'landscape',
-            unit: 'mm',
-            format: 'a4'
-        });
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        
-        const pdfBlob = pdf.output('blob');
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(pdfBlob);
-        const fileName = `${studentName.replace(/[/\\?%*:|"<>]/g, '-')}.pdf`;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-
     } catch (error) {
         console.error('Download error:', error);
         setAlertMessage("حدث خطأ أثناء إنشاء الشهادة. يرجى المحاولة مرة أخرى.");
@@ -1320,6 +1393,7 @@ const App = () => {
                   onDownload: handleDownload,
                   isLoading: isLoading,
                   isImageLoading: isImageLoading,
+                  isIOS: isIOS,
                 }),
                 React.createElement('div', { className: 'h-6' }),
                 React.createElement(CertificatePreview, {
