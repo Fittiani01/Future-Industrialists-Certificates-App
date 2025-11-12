@@ -672,21 +672,11 @@ const CertificatePreview = ({
     React.createElement('div', { className: "w-full max-w-4xl mx-auto flex flex-col items-center" },
       React.createElement('div', {
           ref: previewRef,
-          className: "w-full aspect-[1.414/1] bg-white rounded-2xl shadow-2xl relative overflow-hidden" 
+          className: "w-full aspect-[1.414/1] bg-white rounded-2xl shadow-2xl relative overflow-hidden bg-cover bg-center",
+          style: {
+              backgroundImage: templateUrl ? `url(${templateUrl})` : 'none',
+          }
       },
-          templateUrl && React.createElement('img', {
-            src: templateUrl,
-            alt: "Certificate Background",
-            style: {
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover'
-            },
-            className: "rounded-2xl"
-          }),
           Object.keys(elements).map((key) => {
             const element = elements[key];
             const placeholderText = key === 'name' ? 'الاســـم' : 'المدرســـة';
@@ -1148,18 +1138,38 @@ const App = () => {
   
   const saveAsImageIOS = async (node, studentName) => {
     const fontEmbedCSS = await getFontEmbedCSS(node);
-    const options = { quality: 1, pixelRatio: 2, backgroundColor: 'white', cacheBust: true, fontEmbedCSS: fontEmbedCSS, width: node.clientWidth, height: node.clientHeight };
+    const options = {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: 'white',
+        cacheBust: true,
+        fontEmbedCSS: fontEmbedCSS,
+        width: node.clientWidth,
+        height: node.clientHeight,
+        skipAutoScale: true,
+    };
 
-    await new Promise(resolve => setTimeout(resolve, 500));
-    let dataUrl = await toPng(node, options);
-
-    if (dataUrl.length < 15000) {
-        console.warn('Safari/iOS: First image capture seems blank. Retrying...');
-        await new Promise(resolve => setTimeout(resolve, 500));
-        dataUrl = await toPng(node, options);
-    }
+    // 1. Apply a trivial filter to force a repaint. This is a known Safari/iOS hack.
+    node.style.filter = 'opacity(0.999)';
     
+    // 2. Wait for the next animation frame to ensure the filter is applied.
+    await new Promise(resolve => requestAnimationFrame(resolve));
+
     try {
+        // 3. Perform a "warm-up" render.
+        await toPng(node, options);
+        
+        // 4. A slightly longer delay to be safe, especially on slower devices.
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 5. Final, definitive render.
+        const dataUrl = await toPng(node, options);
+
+        if (dataUrl === 'data:,' || dataUrl.length < 15000) {
+            console.error("Image generation failed for iOS, result is blank.");
+            throw new Error("Generated image is blank.");
+        }
+        
         const res = await fetch(dataUrl);
         const blob = await res.blob();
         const file = new File([blob], `${studentName.replace(/[/\\?%*:|"<>]/g, '-')}.png`, { type: 'image/png' });
@@ -1170,13 +1180,29 @@ const App = () => {
         }
         throw new Error("Web Share not supported, falling back.");
     } catch (err) {
-        console.warn('Web Share API failed, falling back.', err);
+        console.warn('Web Share API or initial render failed, falling back to new tab.', err);
+        // One last attempt for the fallback
+        const dataUrl = await toPng(node, options); 
+        if (dataUrl === 'data:,' || dataUrl.length < 15000) {
+            throw new Error("Failed to generate image even for fallback.");
+        }
         const win = window.open('', '_blank');
         if (win) {
             win.document.write(`<title>شهادة - ${studentName}</title><img src="${dataUrl}" style="width:100%;height:auto;display:block" alt="certificate">`);
         } else {
-            window.open(dataUrl, '_blank');
+            // Fallback for when popups are blocked
+            const message = React.createElement(React.Fragment, null, 
+                React.createElement('span', { className: "block text-xl font-bold text-white mb-4" }, "تعذّر فتح نافذة جديدة"),
+                React.createElement('span', { className: "block" }, "قد يكون متصفحك يمنع النوافذ المنبثقة. يرجى السماح بها لهذا الموقع، ثم حاول مرة أخرى."),
+                React.createElement('span', { className: "block mt-4 text-sm text-slate-400" }, "كحل بديل، يمكنك الضغط مطولاً على الشهادة لحفظ الصورة.")
+            );
+            setAlertMessage(message);
+            setShowAlertModal(true);
+            window.open(dataUrl, '_blank'); // Try one more time
         }
+    } finally {
+      // 6. Cleanup: Remove the filter after we're done.
+      node.style.filter = '';
     }
   };
 
@@ -1215,10 +1241,8 @@ const App = () => {
             database.ref('stats/downloadHistory').push(newRecord);
 
         } else {
-             // --- Enhanced Safari/Desktop & other browsers PDF generation ---
             const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-            const isAppleBrowser = isIOS || isSafari;
-
+            
             const fontEmbedCSS = await getFontEmbedCSS(node);
             const options = {
                 quality: 1,
@@ -1227,19 +1251,24 @@ const App = () => {
                 cacheBust: true,
                 fontEmbedCSS: fontEmbedCSS,
                 width: node.clientWidth,
-                height: node.clientHeight
+                height: node.clientHeight,
+                skipAutoScale: true,
             };
 
             let dataUrl;
-            if (isAppleBrowser) {
-                await new Promise(resolve => setTimeout(resolve, 500));
+            if (isSafari) {
+                // "Warm-up" render for Desktop Safari
+                await toPng(node, options);
+                await new Promise(resolve => setTimeout(resolve, 250));
                 dataUrl = await toPng(node, options);
-                if (dataUrl.length < 15000) {
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    dataUrl = await toPng(node, options);
-                }
             } else {
+                // Standard render for other browsers like Chrome/Firefox
                 dataUrl = await toPng(node, options);
+            }
+
+            if (dataUrl === 'data:,' || dataUrl.length < 15000) {
+                 console.error("Image generation failed, result is blank.");
+                 throw new Error("Generated image is blank.");
             }
             
             const newRecord = { 
@@ -1268,7 +1297,7 @@ const App = () => {
         }
     } catch (error) {
         console.error('Download error:', error);
-        setAlertMessage("حدث خطأ أثناء إنشاء الشهادة. يرجى المحاولة مرة أخرى.");
+        setAlertMessage("حدث خطأ أثناء إنشاء الشهادة، قد تكون الصورة فارغة. يرجى تحديث الصفحة والمحاولة مرة أخرى.");
         setShowAlertModal(true);
     } finally {
         setIsLoading(false);
