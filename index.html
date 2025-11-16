@@ -245,7 +245,7 @@ const JEDDAH_SCHOOLS = [
   "انجال الصفوة", "الفيصلية الاهلية فرع الفلاح", "العزيزية الاهلية",
   "دار الفكر", "دار التربية", "الفلاح الثانوية", "الامجاد الاهلية",
   "نور الايمان", "الروابي الخضراء", "الوادي العالمية", "بيتي الصغير",
-  "روضة السليمانية", "التقوى الشاملة", "الشعلة"
+  "روضة السليمانية", "التقوى الشاملة", "الشعلة", "الثانوية الرابعة والثلاثون", "الثانوية السابعة والاربعون"
 ];
 
 
@@ -844,10 +844,8 @@ const SearchableDropdown = ({ options, value, onChange, placeholder }) => {
     const handleInputChange = (e) => {
         const newValue = e.target.value;
         setSearchTerm(newValue);
+        onChange(newValue);
         if(!isOpen) setIsOpen(true);
-        if (newValue === '') {
-            onChange('');
-        }
     };
 
     const handleClear = () => {
