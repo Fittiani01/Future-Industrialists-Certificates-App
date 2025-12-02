@@ -160,7 +160,7 @@
     <canvas id="network-canvas"></canvas>
     <div id="root"></div>
     <script type="module">
-import React, { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom/client';
 import { createPortal } from 'react-dom';
 import { jsPDF } from 'jspdf';
@@ -178,13 +178,14 @@ const firebaseConfig = {
   measurementId: "G-T76W2FKP9L"
 };
 
-
-// Initialize Firebase
-if (!firebase.apps.length) {
+// Initialize Firebase safely
+let database;
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
+    database = firebase.database();
+} else if (typeof firebase !== 'undefined' && firebase.apps.length) {
+    database = firebase.database();
 }
-const database = firebase.database();
-
 
 // --- Constants ---
 const CERTIFICATE_TEMPLATES = [
@@ -248,6 +249,25 @@ const JEDDAH_SCHOOLS = [
   "روضة السليمانية", "التقوى الشاملة", "الشعلة", "الثانوية الرابعة والثلاثون", "الثانوية السابعة والاربعون"
 ];
 
+// Helper: safeString
+const safeString = (val) => {
+    try {
+        if (val === null || val === undefined) return '';
+        if (typeof val === 'string') return val;
+        if (typeof val === 'number') return String(val);
+        if (typeof val === 'boolean') return val ? 'نعم' : 'لا';
+        if (typeof val === 'object') {
+             try {
+                return JSON.stringify(val).slice(0, 50).replace(/[{"}]/g, ''); 
+            } catch {
+                return 'بيانات غير نصية';
+            }
+        }
+        return String(val);
+    } catch (e) {
+        return '';
+    }
+};
 
 // --- AlertModal Component ---
 const AlertModal = ({ message, onClose }) => {
@@ -455,6 +475,41 @@ const ImagePreviewModal = ({ imageUrl, onClose, studentName }) => {
     );
 };
 
+// --- ErrorBoundary Component ---
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error("ErrorBoundary caught an error", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return React.createElement('div', { className: "fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-md" },
+                React.createElement('div', { className: "w-full max-w-lg p-8 text-center bg-slate-800 rounded-2xl border border-red-500 shadow-2xl" },
+                    React.createElement('h2', { className: "text-red-400 text-2xl font-bold mb-4" }, "عذراً، حدث خطأ غير متوقع"),
+                    React.createElement('p', { className: "text-slate-300 mb-6" }, "تم اكتشاف مشكلة في عرض البيانات. لا تقلق، بياناتك آمنة، ولكن تعذر عرض لوحة التحكم حالياً."),
+                    React.createElement('div', { className: "bg-slate-900 p-4 rounded-lg text-left overflow-auto max-h-40 text-xs text-red-300 dir-ltr font-mono mb-6" }, 
+                      this.state.error && this.state.error.toString()
+                    ),
+                    React.createElement('button', {
+                        onClick: () => window.location.reload(),
+                        className: "bg-emerald-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-emerald-500 transition-colors"
+                    }, "تحديث الصفحة")
+                )
+            );
+        }
+        return this.props.children;
+    }
+}
+
 // --- AdminDashboardSkeleton Component ---
 const AdminDashboardSkeleton = () => {
     return React.createElement('div', { className: "w-full max-w-5xl mx-auto p-4 space-y-6 animate-pulse" },
@@ -494,15 +549,25 @@ const AdminDashboard = ({
     onResetCounter, 
     onDownloadPdfReport,
     onDownloadExcelReport,
-    reportRef 
+    reportRef,
+    connectionError 
 }) => {
   if (isLoading) {
     return React.createElement(AdminDashboardSkeleton);
   }
+
+  if (connectionError) {
+      return React.createElement('div', { className: "w-full max-w-4xl mx-auto p-8 text-center bg-red-900/20 border border-red-500 rounded-2xl mt-8" },
+          React.createElement('svg', { xmlns:"http://www.w3.org/2000/svg", className:"h-16 w-16 text-red-500 mx-auto mb-4", fill:"none", viewBox:"0 0 24 24", stroke:"currentColor"}, React.createElement('path', { strokeLinecap:"round", strokeLinejoin:"round", strokeWidth:2, d:"M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"})),
+          React.createElement('h3', { className: "text-red-400 font-bold text-2xl mb-2"}, "تعذر الاتصال بقاعدة البيانات"),
+          React.createElement('p', { className: "text-red-300 text-lg"}, connectionError),
+          React.createElement('p', { className: "text-slate-400 mt-4 text-sm"}, "يرجى التحقق من قواعد الأمان (Rules) في لوحة تحكم Firebase.")
+      );
+  }
   
   const pdfButtonText = 'تحميل PDF';
 
-  if (history.length === 0) {
+  if (!history || history.length === 0) {
     return (
       React.createElement('div', { className: "w-full max-w-4xl mx-auto p-4 space-y-6 text-center" },
         React.createElement('div', { ref: reportRef, className: "printable-area" }, 
@@ -534,9 +599,11 @@ const AdminDashboard = ({
     );
   }
 
+  // Robust data processing
   const totalDownloads = history.length;
   const { pdfDownloads, pngDownloads } = history.reduce((acc, curr) => {
-      if (curr.format === 'png') {
+      const fmt = safeString(curr.format);
+      if (fmt === 'png') {
           acc.pngDownloads += 1;
       } else {
           acc.pdfDownloads += 1;
@@ -548,7 +615,8 @@ const AdminDashboard = ({
   const conicGradient = `conic-gradient(#a855f7 0% ${pdfPercentage}%, #10b981 ${pdfPercentage}% 100%)`;
   
   const downloadsByTypeMap = history.reduce((acc, curr) => {
-      acc.set(curr.type, (acc.get(curr.type) || 0) + 1);
+      const type = safeString(curr.type);
+      acc.set(type, (acc.get(type) || 0) + 1);
       return acc;
   }, new Map());
   const downloadsByType = Array.from(downloadsByTypeMap.entries())
@@ -557,9 +625,13 @@ const AdminDashboard = ({
   const maxTypeCount = Math.max(...downloadsByType.map(d => d.count), 0);
 
   const downloadsBySchoolMap = history
-      .filter(item => item.school && item.school.trim() !== '' && item.school.trim() !== 'المدرســـة')
+      .filter(item => {
+          const s = safeString(item.school);
+          return s && s.trim() !== '' && s.trim() !== 'المدرســـة';
+      })
       .reduce((acc, curr) => {
-          acc.set(curr.school, (acc.get(curr.school) || 0) + 1);
+          const s = safeString(curr.school);
+          acc.set(s, (acc.get(s) || 0) + 1);
           return acc;
       }, new Map());
   const downloadsBySchool = Array.from(downloadsBySchoolMap.entries())
@@ -570,12 +642,24 @@ const AdminDashboard = ({
   const recentActivity = history.slice(0, 10);
 
   const formatTimestamp = (isoString) => {
-    const date = new Date(isoString);
-    return date.toLocaleString('ar-EG', {
-        year: 'numeric', month: 'long', day: 'numeric',
-        hour: '2-digit', minute: '2-digit', hour12: true,
-        numberingSystem: 'latn'
-    });
+    try {
+        if (!isoString) return 'تاريخ غير متوفر';
+        let date;
+        if (typeof isoString === 'object' && isoString.seconds) {
+            date = new Date(isoString.seconds * 1000);
+        } else {
+            date = new Date(isoString);
+        }
+        if (isNaN(date.getTime())) return 'تاريخ غير صالح';
+        
+        return date.toLocaleString('ar-EG', {
+            year: 'numeric', month: 'long', day: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: true,
+            numberingSystem: 'latn'
+        });
+    } catch {
+        return 'خطأ في التنسيق';
+    }
   };
 
   return (
@@ -584,7 +668,7 @@ const AdminDashboard = ({
           React.createElement('div', { className: "print-header" },
                 React.createElement('h1', null, "تقرير إحصائيات صناعيو المستقبل"),
                 React.createElement('p', null, `تاريخ الطباعة: ${new Date().toLocaleString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', numberingSystem: 'latn' })}`)
-          ),
+            ),
           React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
             React.createElement('div', { className: "bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 flex flex-col items-center justify-center print-card" },
               React.createElement('h3', { className: "text-slate-400 text-lg" }, "إجمالي التحميلات"),
@@ -654,13 +738,13 @@ const AdminDashboard = ({
               React.createElement('div', { className: "space-y-2 max-h-60 overflow-y-auto" }, recentActivity.map((activity, index) => (
                     React.createElement('div', { key: index, className: "flex flex-col sm:flex-row justify-between items-start sm:items-center text-sm p-2 border-b border-slate-700 last:border-b-0 gap-2 sm:gap-4 print-table-row" },
                         React.createElement('div', {className: "flex-1"},
-                            React.createElement('p', { className: "text-slate-200" }, "الاسم: ", React.createElement('span', { className: "font-semibold text-emerald-400" }, activity.student || 'غير محدد'))
+                            React.createElement('p', { className: "text-slate-200" }, "الاسم: ", React.createElement('span', { className: "font-semibold text-emerald-400" }, safeString(activity.student) || 'غير محدد'))
                         ),
                          React.createElement('div', {className: "flex-1"},
-                            React.createElement('p', { className: "text-slate-200" }, "المدرسة: ", React.createElement('span', { className: "font-semibold text-white truncate" }, activity.school || 'غير محدد'))
+                            React.createElement('p', { className: "text-slate-200" }, "المدرسة: ", React.createElement('span', { className: "font-semibold text-white truncate" }, safeString(activity.school) || 'غير محدد'))
                         ),
                         React.createElement('div', {className: "flex-1"},
-                            React.createElement('p', { className: "text-slate-200" }, "النوع: ", React.createElement('span', { className: "font-semibold text-purple-400" }, activity.type))
+                            React.createElement('p', { className: "text-slate-200" }, "النوع: ", React.createElement('span', { className: "font-semibold text-purple-400" }, safeString(activity.type)))
                         ),
                         React.createElement('span', { className: "text-slate-400 text-xs" }, formatTimestamp(activity.timestamp))
                     )
@@ -1042,6 +1126,7 @@ const App = () => {
   
   const [downloadHistory, setDownloadHistory] = useState([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState(null);
   const [templateDataUrl, setTemplateDataUrl] = useState('');
   const [generatedImageUrl, setGeneratedImageUrl] = useState(null);
 
@@ -1086,19 +1171,75 @@ const App = () => {
   }, [elements, sanitizeAndSaveElements]);
 
   useEffect(() => {
+    setIsDataLoading(true);
+    setConnectionError(null);
+    if (!database) {
+         setConnectionError("لم يتم تهيئة قاعدة البيانات. يرجى التحقق من اتصال الإنترنت.");
+         setIsDataLoading(false);
+         return;
+    }
     const statsRef = database.ref('stats/downloadHistory');
-    const listener = statsRef.orderByChild('timestamp').on('value', (snapshot) => {
+    
+    const handleValue = (snapshot) => {
         const historyData = snapshot.val();
         if (historyData) {
-            const historyArray = Object.values(historyData).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            let historyArray = Object.values(historyData).map(item => {
+                     if (!item || typeof item !== 'object') return null;
+                     return item;
+            }).filter(Boolean);
+
+            // --- تصفية التكرار (Deduplication) ---
+            // نستخدم Set لتخزين المفاتيح الفريدة (اسم + مدرسة + نوع)
+            const seenMap = new Set();
+            historyArray = historyArray.filter(item => {
+                const name = safeString(item.student).trim();
+                const school = safeString(item.school).trim();
+                const type = safeString(item.type).trim();
+                
+                // مفتاح فريد يجمع البيانات الأساسية
+                const key = `${name}|${school}|${type}`;
+                
+                if (seenMap.has(key)) {
+                    return false; // تجاهل المكرر
+                }
+                seenMap.add(key);
+                return true; // احتفظ بالفريد
+            });
+            // -------------------------------------
+
+            historyArray.sort((a, b) => {
+                 const getTime = (t) => {
+                     if (!t) return 0;
+                     if (t.seconds) return t.seconds * 1000;
+                     if (typeof t === 'number') return t;
+                     const d = new Date(t);
+                     return isNaN(d.getTime()) ? 0 : d.getTime();
+                 };
+                 return getTime(b.timestamp) - getTime(a.timestamp);
+            });
             setDownloadHistory(historyArray);
         } else {
             setDownloadHistory([]);
         }
+        setConnectionError(null);
         setIsDataLoading(false);
-    });
+    };
+
+    const handleError = (error) => {
+        console.error("Firebase Database Error:", error);
+        let msg = error.message;
+        if (error.code === 'PERMISSION_DENIED' || error.message.includes('permission_denied')) {
+            msg = "تم رفض الوصول: يرجى التأكد من أن قواعد الأمان (Rules) في Firebase تسمح بالقراءة (public read).";
+        }
+        setConnectionError(msg); 
+        setIsDataLoading(false); 
+    };
+
+    // Subscribe
+    statsRef.on('value', handleValue, handleError);
+
     // Cleanup listener on unmount
-    return () => statsRef.off('value', listener);
+    return () => statsRef.off('value', handleValue);
   }, []);
 
   useEffect(() => {
@@ -1229,7 +1370,7 @@ const App = () => {
                 student: studentName,
                 school: schoolName,
             };
-            database.ref('stats/downloadHistory').push(newRecord);
+            if(database) database.ref('stats/downloadHistory').push(newRecord);
         } else {
             const newRecord = { 
                 type: selectedTemplateId, 
@@ -1238,7 +1379,7 @@ const App = () => {
                 student: studentName,
                 school: schoolName,
             };
-            database.ref('stats/downloadHistory').push(newRecord);
+            if(database) database.ref('stats/downloadHistory').push(newRecord);
 
             const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
             const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -1323,7 +1464,7 @@ const App = () => {
   const handlePasswordSubmit = (password) => { if (password === 'AdminFuture') { setIsAdminAuthenticated(true); setShowPasswordModal(false); setShowAdmin(true); } else { setAlertMessage('كلمة المرور غير صحيحة'); setShowAlertModal(true); } };
   const handleResetCounter = () => setShowResetConfirm(true);
   const executeReset = () => { 
-    database.ref('stats').remove(); 
+    if(database) database.ref('stats').remove(); 
   };
   
   const UnconfiguredAdminView = () => (
@@ -1355,14 +1496,17 @@ const App = () => {
         React.createElement('main', { className: "w-full flex-grow flex flex-col items-center" },
             showAdmin ? (
                 isFirebaseConfigured ?
-                React.createElement(AdminDashboard, { 
-                    history: downloadHistory, 
-                    isLoading: isDataLoading,
-                    onResetCounter: handleResetCounter,
-                    onDownloadPdfReport: handleDownloadPdfReport,
-                    onDownloadExcelReport: handleDownloadExcelReport,
-                    reportRef: reportRef
-                }) : React.createElement(UnconfiguredAdminView)
+                React.createElement(ErrorBoundary, null,
+                    React.createElement(AdminDashboard, { 
+                        history: downloadHistory, 
+                        isLoading: isDataLoading,
+                        onResetCounter: handleResetCounter,
+                        onDownloadPdfReport: handleDownloadPdfReport,
+                        onDownloadExcelReport: handleDownloadExcelReport,
+                        reportRef: reportRef,
+                        connectionError: connectionError
+                    })
+                ) : React.createElement(UnconfiguredAdminView)
             ) : React.createElement(React.Fragment, null,
                 React.createElement(Controls, {
                   elements: elements,
